@@ -53,6 +53,7 @@ def convergence(bestfitloc='posteriorpdf.fits'):
     lnprob = lnprob.max() - lnprob
     lnprob = numpy.abs(lnprob)
 
+
     plt.clf()
     plt.plot(lnprob, ',', alpha=0.5)
     plt.xlabel('iteration')
@@ -64,7 +65,7 @@ def convergence(bestfitloc='posteriorpdf.fits'):
     plt.title(objname)
     plt.semilogy()
 
-    outfile = 'convergence'
+    outfile = 'convergence.png'
     savefig(outfile)
 
 def posteriorPDF(bestfitloc='posteriorpdf.fits'):

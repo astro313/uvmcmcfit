@@ -593,8 +593,8 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
     plt.imshow(modelcut, cmap='gray_r', interpolation='nearest', \
             extent=cornerextent, origin='lower', vmax=vmax, vmin=vmin)
 
-    plevs = 3*rms * 2**(numpy.arange(10))
-    nlevs = sorted(-3 * rms * 2**(numpy.arange(4)))
+    plevs = 2*rms * numpy.sqrt(2)**(numpy.arange(10))
+    nlevs = sorted(-2 * rms * numpy.sqrt(2)**(numpy.arange(4)))
     pcline = 'solid'
     ncline = 'dashed'
     #nx_contour = datacut[0, :].size

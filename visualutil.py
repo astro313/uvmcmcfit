@@ -238,26 +238,7 @@ def makeVis(config, miriad=False, idtag=''):
     # "Observe" the lensed emission with the SMA and write to a new file
     #----------------------------------------------------------------------
     # Python version of UVMODEL's "replace" subroutine:
-<<<<<<< HEAD
-    nameindx = visfile.find('uvfits')
-    name = visfile[0:nameindx-1]
-    print(name)
-    if miriad:
-        tag = '.uvfits'
-    else:
-        tag = '.ms'
 
-    visfile = name + tag
-    SBmapLoc = 'LensedSBmap.fits'
-    modelvisfile = name + '_model_' + idtag + tag
-    os.system('rm -rf ' + modelvisfile)
-    uvmodel.replace(SBmapLoc, visfile, modelvisfile, miriad=miriad)
-    
-    # Python version of UVMODEL's "subtract" subroutine:
-    modelvisfile = name + '_residual_' + idtag + tag
-    os.system('rm -rf ' + modelvisfile)
-    uvmodel.subtract(SBmapLoc, visfile, modelvisfile, miriad=miriad)
-=======
     try:
         checker = visfile.find('uvfits')
         if checker == -1:
@@ -397,7 +378,6 @@ def makeVis(config, miriad=False, idtag=''):
         #            + "or a list of strings."
         #    print(msg)
         #    raise TypeError
->>>>>>> 58c03ce... Bug fixes for visualization routines
 
 def makeImage(config, interactive=True, miriad=False, idtag=''):
 

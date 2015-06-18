@@ -29,8 +29,8 @@ def pcdload(visfile):
                 pcd_ra = visdata['AIPS SU '].data['RAEPO'][0]
                 pcd_dec = visdata['AIPS SU '].data['DECEPO'][0]
             except:
-                pcd_ra = visheader['CRVAL5']
-                pcd_dec = visheader['CRVAL6']
+                pcd_ra = visheader['CRVAL6']
+                pcd_dec = visheader['CRVAL7']
             if pcd_ra < 0:
                 pcd_ra += 360
             pcd = [pcd_ra, pcd_dec]
@@ -38,9 +38,8 @@ def pcdload(visfile):
 
         if visheader['NAXIS'] == 6:
 
-           # identify the channel frequency(ies):
-            pcd_ra = visdata[0].header['CRVAL5']
-            pcd_dec = visdata[0].header['CRVAL6']
+            pcd_ra = visdata[0].header['CRVAL6']
+            pcd_dec = visdata[0].header['CRVAL7']
             if pcd_ra < 0:
                 pcd_ra += 360
             pcd = [pcd_ra, pcd_dec]

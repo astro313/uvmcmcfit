@@ -1,4 +1,3 @@
-
 def plotPDF(fitresults, tag, limits='', Ngood=5000, axes='auto'):
 
     """
@@ -15,7 +14,7 @@ def plotPDF(fitresults, tag, limits='', Ngood=5000, axes='auto'):
 
 
     # plotting parameters
-    rc('font',**{'family':'sans-serif', 'sans-serif':['Arial Narrow'], 
+    rc('font',**{'family':'sans-serif', 'sans-serif':['Arial Narrow'],
         'size':'12'})
 
     # grab the last Ngood fits
@@ -60,7 +59,7 @@ def plotPDF(fitresults, tag, limits='', Ngood=5000, axes='auto'):
                 start, end = ax.get_xlim()
                 nticks = 5
                 stepsize = (end - start) / nticks
-                ax.xaxis.set_ticks(numpy.arange(start, end + 0.99*stepsize, 
+                ax.xaxis.set_ticks(numpy.arange(start, end + 0.99*stepsize,
                     stepsize))
             elif axes == 'initial':
                 oldaxis = plt.axis()
@@ -188,7 +187,7 @@ def makeSBmap(config, fitresult):
             oney = numpy.ones(ny)
             finex = numpy.outer(oney, linspacex)
             finey = numpy.outer(linspacey, onex)
-            
+
             mumap = numpy.zeros([ny, nx])
             for ix in range(nx):
                 for iy in range(ny):
@@ -241,7 +240,7 @@ def makeVis(config, miriad=False, idtag=''):
 
     # is visfile a list of visibilities files?
     if not type(visfile) is list:
-    
+
         visname, visext = os.path.splitext(visfile)
         if miriad:
             # We use miriad to do the imaging
@@ -288,10 +287,10 @@ def makeVis(config, miriad=False, idtag=''):
             #os.system(command)
         else:
             #print(visfile, modelvisfile)
-            uvmodel.replace(SBmapLoc, visfile, modelvisfile, 
+            uvmodel.replace(SBmapLoc, visfile, modelvisfile,
                     miriad=miriad)
             #print(visfile, modelvisfile)
-        
+
         # Python version of UVMODEL's "subtract" subroutine:
         modelvisfile = visname + '_residual_' + idtag + tag
         os.system('rm -rf ' + modelvisfile)
@@ -310,7 +309,7 @@ def makeVis(config, miriad=False, idtag=''):
             #os.system(command)
         else:
             #print(visfile, modelvisfile)
-            uvmodel.subtract(SBmapLoc, visfile, modelvisfile, 
+            uvmodel.subtract(SBmapLoc, visfile, modelvisfile,
                     miriad=miriad)
     else:
         for i, ivisfile in enumerate(visfile):
@@ -357,9 +356,9 @@ def makeVis(config, miriad=False, idtag=''):
                 ivisfile = visname + tag
                 modelivisfile = visname + '_model_' + idtag + tag
                 os.system('rm -rf ' + modelivisfile)
-                uvmodel.replace(SBmapLoc, ivisfile, modelivisfile, 
+                uvmodel.replace(SBmapLoc, ivisfile, modelivisfile,
                         miriad=miriad)
-            
+
             # Python version of UVMODEL's "subtract" subroutine:
             if miriad:
                 SBmapMiriad = 'LensedSBmap.miriad'
@@ -379,7 +378,7 @@ def makeVis(config, miriad=False, idtag=''):
             else:
                 modelivisfile = visname + '_residual_' + idtag + tag
                 os.system('rm -rf ' + modelivisfile)
-                uvmodel.subtract(SBmapLoc, ivisfile, modelivisfile, 
+                uvmodel.subtract(SBmapLoc, ivisfile, modelivisfile,
                         miriad=miriad)
         #except:
         #    msg = "Visibility datasets must be specified as either a string " \
@@ -400,7 +399,7 @@ def makeImage(config, interactive=True, miriad=False, idtag=''):
     from astropy.io import fits
     import miriadutil
 
-        
+
     visfile = config['UVData']
     target = config['ObjectName']
     fitsim = config['ImageName']
@@ -519,7 +518,7 @@ def makeImage(config, interactive=True, miriad=False, idtag=''):
                         "string or a list of strings."
                 print(msg)
                 raise TypeError
-                
+
     else:
         # use CASA for imaging
         from clean import clean
@@ -545,7 +544,7 @@ def makeImage(config, interactive=True, miriad=False, idtag=''):
 
         # use CASA's clean task to make the images
         clean(vis=modelvisloc, imagename=imloc, mode='mfs', niter=10000,
-            threshold='0.2mJy', interactive=interactive, mask=mask, 
+            threshold='0.2mJy', interactive=interactive, mask=mask,
             imsize=imsize, cell=cell, weighting='briggs', robust=0.5)
 
         # export the cleaned image to a fits file
@@ -572,13 +571,13 @@ def makeImage(config, interactive=True, miriad=False, idtag=''):
 
         # use CASA's clean task to make the images
         clean(vis=modelvisloc, imagename=imloc, mode='mfs', niter=10000,
-            threshold='0.2mJy', interactive=interactive, mask=mask, 
+            threshold='0.2mJy', interactive=interactive, mask=mask,
             imsize=imsize, cell=cell, weighting='briggs', robust=0.5)
 
         # export the cleaned image to a fits file
         os.system('rm -rf ' + imloc + '.fits')
         exportfits(imagename=imloc + '.image', fitsimage=imloc + '.fits')
-    
+
     return
 
 def plotImage(model, data, config, modeltype, fitresult, tag=''):
@@ -587,7 +586,7 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
 
     Make a surface brightness map of a given model image.  Overlay with red
     contours a surface brightness map of the data image to which the model was
-    fit. 
+    fit.
 
     """
 
@@ -603,14 +602,15 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
     # set font properties
     font = {'family' : 'Arial Narrow',
             'weight' : 'bold',
-            'size'   : 10}
+            'size'   : 13}
     matplotlib.rc('font', **font)
     matplotlib.rcParams['axes.linewidth'] = 1.5
+    matplotlib.rcParams['axes.labelsize'] = 'xx-large'
 
-    fig = plt.figure(figsize=(3.0, 3.0))
+    fig = plt.figure(figsize=(5.0, 5.0))
     ax = fig.add_subplot(1, 1, 1)
-    plt.subplots_adjust(left=0.08, right=0.97, top=0.97, 
-            bottom=0.08, wspace=0.35)
+    plt.subplots_adjust(left=0.14, right=0.97, top=0.97,
+            bottom=0.11, wspace=0.35)
     paramData = setuputil.loadParams(config)
     nlensedsource = paramData['nlensedsource']
     nlensedregions = paramData['nlensedregions']
@@ -818,8 +818,10 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
     plt.imshow(modelcut, cmap='gray_r', interpolation='nearest', \
             extent=cornerextent, origin='lower', vmax=vmax, vmin=vmin)
 
-    plevs = 3*rms * 2**(numpy.arange(10))
-    nlevs = sorted(-3 * rms * 2**(numpy.arange(4)))
+#     plevs = 3*rms * 2**(numpy.arange(10))
+#     nlevs = sorted(-3 * rms * 2**(numpy.arange(4)))
+    plevs = 2*rms * numpy.sqrt(2)**(numpy.arange(10))
+    nlevs = sorted(-2 * rms * numpy.sqrt(2)**(numpy.arange(4)))
     pcline = 'solid'
     ncline = 'dashed'
     #nx_contour = datacut[0, :].size
@@ -844,8 +846,8 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
     plt.tick_params(width=1.5, which='both')
     plt.tick_params(length=2, which='minor')
     plt.tick_params(length=4, which='major')
-    #plt.xlabel(r'$\Delta$RA (arcsec)', fontsize='x-large')
-    #plt.ylabel(r'$\Delta$Dec (arcsec)', fontsize='x-large')
+    plt.xlabel(r'$\Delta$RA (arcsec)', fontsize='xx-large')
+    plt.ylabel(r'$\Delta$Dec (arcsec)', fontsize='xx-large')
 
     bparad = bpa / 180 * numpy.pi
     beamx = numpy.abs(numpy.sin(bparad) * bmaj) + \
@@ -902,7 +904,7 @@ def removeTempFiles():
 
 
     cmd = 'rm -rf *SBmap*fits *_model* *_residual* *output.txt'
-    os.system(cmd)    
+    os.system(cmd)
 
 def plotFit(config, fitresult, tag='', cleanup=True, showOptical=False,
         interactive=True):

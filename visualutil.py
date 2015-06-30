@@ -844,8 +844,8 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
 
     plt.minorticks_on()
     plt.tick_params(width=1.5, which='both')
-    plt.tick_params(length=2, which='minor')
-    plt.tick_params(length=4, which='major')
+    plt.tick_params(length=4, which='minor')
+    plt.tick_params(length=8, which='major')
     plt.xlabel(r'$\Delta$RA (arcsec)', fontsize='xx-large')
     plt.ylabel(r'$\Delta$Dec (arcsec)', fontsize='xx-large')
 

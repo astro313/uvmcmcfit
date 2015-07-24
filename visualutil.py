@@ -540,10 +540,12 @@ def makeImage(config, interactive=True, miriad=False, idtag=''):
                 modelvisloc.append(visname + '_model_' + idtag + '.ms')
         # handle single visibility files
         else:
-            visname, visext = os.path.splitext(ivisfile)
+            visname, visext = os.path.splitext(visfile)
             modelvisloc = visname + '_model_' + idtag + '.ms'
 
         # use CASA's clean task to make the images
+        print("*** CLEANING with the following options: *** \n")
+        print("vis={:s}, imagename={:s}, mode='mfs', niters=10000, threshold='0.2mJy', interactive={:}, mask={:s},imsize={:s},cell={:s},weighting='briggs',robust=0.5").format(modelvisloc, imloc, interactive,mask, imsize, cell)
         clean(vis=modelvisloc, imagename=imloc, mode='mfs', niter=10000,
             threshold='0.2mJy', interactive=interactive, mask=mask, 
             imsize=imsize, cell=cell, weighting='briggs', robust=0.5)

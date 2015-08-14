@@ -146,14 +146,14 @@ def uvload(visfile, miriad=False):
                         freqvis = numpy.meshgrid(freq, visibilities['WW'])
                         ww[:, ispw, :, ipol] = freqvis[0] * freqvis[1]
                     else:
-                        if miriad is True:
-                            freq = (numpy.arange(nfreq) - cfreq + 1) * dfreq + freqif
-                            freqvis = numpy.meshgrid(freq, visibilities['UU'])
-                            uu[:, ispw, :, ipol] = freqvis[0] * freqvis[1]
-                            freqvis = numpy.meshgrid(freq, visibilities['VV'])
-                            vv[:, ispw, :, ipol] = freqvis[0] * freqvis[1]
-                            freqvis = numpy.meshgrid(freq, visibilities['WW'])
-                            ww[:, ispw, :, ipol] = freqvis[0] * freqvis[1]
+                        # if miriad is True:
+                        #     freq = (numpy.arange(nfreq) - cfreq + 1) * dfreq + freqif
+                        #     freqvis = numpy.meshgrid(freq, visibilities['UU'])
+                        #     uu[:, ispw, :, ipol] = freqvis[0] * freqvis[1]
+                        #     freqvis = numpy.meshgrid(freq, visibilities['VV'])
+                        #     vv[:, ispw, :, ipol] = freqvis[0] * freqvis[1]
+                        #     freqvis = numpy.meshgrid(freq, visibilities['WW'])
+                        #     ww[:, ispw, :, ipol] = freqvis[0] * freqvis[1]
                         # else:
                         #     uu[:, ispw, ipol] = freqif * visibilities['UU']
                         #     vv[:, ispw, ipol] = freqif * visibilities['VV']

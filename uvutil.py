@@ -111,14 +111,18 @@ def uvload(visfile, miriad=False):
                 vv = numpy.zeros([nvis, nspw, nfreq, npol])
                 ww = numpy.zeros([nvis, nspw, nfreq, npol])
             else:
-                if miriad is True:
-                    uu = numpy.zeros([nvis, nspw, nfreq, npol])
-                    vv = numpy.zeros([nvis, nspw, nfreq, npol])
-                    ww = numpy.zeros([nvis, nspw, nfreq, npol])
-                else:
-                    uu = numpy.zeros([nvis, nspw, npol])
-                    vv = numpy.zeros([nvis, nspw, npol])
-                    ww = numpy.zeros([nvis, nspw, npol])
+                # if miriad is True:
+                #     uu = numpy.zeros([nvis, nspw, nfreq, npol])
+                #     vv = numpy.zeros([nvis, nspw, nfreq, npol])
+                #     ww = numpy.zeros([nvis, nspw, nfreq, npol])
+                # else:
+                #     uu = numpy.zeros([nvis, nspw, npol])
+                #     vv = numpy.zeros([nvis, nspw, npol])
+                #     ww = numpy.zeros([nvis, nspw, npol])
+                uu = numpy.zeros([nvis, nspw, npol])
+                vv = numpy.zeros([nvis, nspw, npol])
+                ww = numpy.zeros([nvis, nspw, npol])
+
             #wgt = numpy.zeros([nvis, nspw, nfreq, npol])
             for ispw in range(nspw):
                 if nspw > 1:
@@ -150,10 +154,13 @@ def uvload(visfile, miriad=False):
                             vv[:, ispw, :, ipol] = freqvis[0] * freqvis[1]
                             freqvis = numpy.meshgrid(freq, visibilities['WW'])
                             ww[:, ispw, :, ipol] = freqvis[0] * freqvis[1]
-                        else:
-                            uu[:, ispw, ipol] = freqif * visibilities['UU']
-                            vv[:, ispw, ipol] = freqif * visibilities['VV']
-                            ww[:, ispw, ipol] = freqif * visibilities['WW']
+                        # else:
+                        #     uu[:, ispw, ipol] = freqif * visibilities['UU']
+                        #     vv[:, ispw, ipol] = freqif * visibilities['VV']
+                        #     ww[:, ispw, ipol] = freqif * visibilities['WW']
+                        uu[:, ispw, ipol] = freqif * visibilities['UU']
+                        vv[:, ispw, ipol] = freqif * visibilities['VV']
+                        ww[:, ispw, ipol] = freqif * visibilities['WW']
 
         if visheader['NAXIS'] == 6:
 

@@ -63,8 +63,19 @@ def writeVis(vis_complex, visdataloc, modelvisloc, miriad=False):
 
         visheader = visfile[0].header
         if visheader['NAXIS'] == 7:
-            visibilities['DATA'][:, 0, 0, :, :, :, 0] = real
-            visibilities['DATA'][:, 0, 0, :, :, :, 1] = imag
+            if nfreq > 1:
+                # to match uvutil.uvload() before implementing miriad=
+                visibilities['DATA'][:, 0, 0, :, :, :, 0] = real
+                visibilities['DATA'][:, 0, 0, :, :, :, 1] = imag
+            else:
+                try:
+                    visibilities['DATA'][:, 0, 0, :, :, :, 0] = real
+                    visibilities['DATA'][:, 0, 0, :, :, :, 1] = imag
+                except ValueError:
+                    # when uu.ndim is 3
+                    # vis, 0, 0, spw, chan(freq), pol, (real, imag, weights)
+                    visibilities['DATA'][:, 0, 0, :, 0, :, 0] = real
+                    visibilities['DATA'][:, 0, 0, :, 0, :, 1] = imag
         elif visheader['NAXIS'] == 6:
             visibilities['DATA'][:, 0, 0, :, :, 0] = real
             visibilities['DATA'][:, 0, 0, :, :, 1] = imag

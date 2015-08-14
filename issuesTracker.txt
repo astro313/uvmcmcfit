@@ -14,3 +14,18 @@ causing mismatch in array size in writeVis(miriad=True), which only depends on N
 
 >> fix adding miriad=True in uvutil.uvload 
 >> since this is only a problem when miriad=True in uvmodel.writeVis
+
+
+08-14-2015:
+Attempt to fix the above issue consistent with uvutil.uvload()
+
++ comment out changes made in uvuitl.uvload (added option miriad=) which fixed the array size mismatch when calling checkvis.uvmcmcfitVis 
++ Added how to handle the model visibility if NAXIS = 7 following uvutil.uvload:
++ first check if nfreq > 1:
++ if True, it will follow the original way (i.e. 7 axis)
++ else, it will try to force 7 axis, with nfreq-axis being [:], 
++ if it catches the array mismatch which is due to uu.ndim, hence real.ndim = 3 
++ it will make 7 axis, with nfreq-axis begin [0]
+
+
+

@@ -62,9 +62,13 @@ def writeVis(vis_complex, visdataloc, modelvisloc, miriad=False):
         visibilities = visfile[0].data
 
         visheader = visfile[0].header
+
         if visheader['NAXIS'] == 7:
+            # expect uu.dim = 4, hence real.ndim also 4
+            nfreq = visibilities['DATA'][0, 0, 0, 0, :, 0, 0].size
+
+            # to match uvutil.uvload() instead of fixing array size mismatch with miriad= in the function
             if nfreq > 1:
-                # to match uvutil.uvload() before implementing miriad=
                 visibilities['DATA'][:, 0, 0, :, :, :, 0] = real
                 visibilities['DATA'][:, 0, 0, :, :, :, 1] = imag
             else:
@@ -72,7 +76,7 @@ def writeVis(vis_complex, visdataloc, modelvisloc, miriad=False):
                     visibilities['DATA'][:, 0, 0, :, :, :, 0] = real
                     visibilities['DATA'][:, 0, 0, :, :, :, 1] = imag
                 except ValueError:
-                    # when uu.ndim is 3
+                    # mistmatach arise when uu.ndim is 3
                     # vis, 0, 0, spw, chan(freq), pol, (real, imag, weights)
                     visibilities['DATA'][:, 0, 0, :, 0, :, 0] = real
                     visibilities['DATA'][:, 0, 0, :, 0, :, 1] = imag

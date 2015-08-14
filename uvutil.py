@@ -10,6 +10,7 @@ from __future__ import print_function
 import numpy
 from astropy.io import fits
 
+
 def pcdload(visfile):
 
     checker = visfile.find('uvfits')
@@ -57,6 +58,7 @@ def pcdload(visfile):
         pcd = [pcd_ra, pcd_dec]
         return pcd
 
+
 def uvload(visfile, miriad=False):
     """load in visibilities from a uv-file
 
@@ -80,10 +82,10 @@ def uvload(visfile, miriad=False):
 
     Note
     ----
+    08-14-2015:
     Although a better solution to fix the array size mismatch problem that arises when calling `checkvis.uvmcmcfitVis` maybe something similar to the to-be-implemented function: uvmodel.add
         which looks for nspw to shape model_complex
     """
-
 
     checker = visfile.find('uvfits')
     if checker == -1:
@@ -138,7 +140,8 @@ def uvload(visfile, miriad=False):
                 for ipol in range(npol):
                    # then compute the spatial frequencies:
                     if nfreq > 1:
-                        freq = (numpy.arange(nfreq) - cfreq + 1) * dfreq + freqif
+                        freq = (numpy.arange(nfreq) - cfreq + 1) * \
+                            dfreq + freqif
                         freqvis = numpy.meshgrid(freq, visibilities['UU'])
                         uu[:, ispw, :, ipol] = freqvis[0] * freqvis[1]
                         freqvis = numpy.meshgrid(freq, visibilities['VV'])
@@ -242,6 +245,7 @@ def uvload(visfile, miriad=False):
 
     return uu, vv, ww
 
+
 def visload(visfile):
 
     checker = visfile.find('uvfits')
@@ -259,28 +263,28 @@ def visload(visfile):
         if visheader['NAXIS'] == 6:
             nfreq = visdata[0].data['DATA'][0, 0, 0, :, 0, 0].size
             if nfreq > 1:
-                data_real = visdata[0].data['DATA'][:,0,0,:,:,0]
-                data_imag = visdata[0].data['DATA'][:,0,0,:,:,1]
-                data_wgt = visdata[0].data['DATA'][:,0,0,:,:,2]
+                data_real = visdata[0].data['DATA'][:, 0, 0, :, :, 0]
+                data_imag = visdata[0].data['DATA'][:, 0, 0, :, :, 1]
+                data_wgt = visdata[0].data['DATA'][:, 0, 0, :, :, 2]
             else:
-                data_real = visdata[0].data['DATA'][:,0,0,0,:,0]
-                data_imag = visdata[0].data['DATA'][:,0,0,0,:,1]
-                data_wgt = visdata[0].data['DATA'][:,0,0,0,:,2]
+                data_real = visdata[0].data['DATA'][:, 0, 0, 0, :, 0]
+                data_imag = visdata[0].data['DATA'][:, 0, 0, 0, :, 1]
+                data_wgt = visdata[0].data['DATA'][:, 0, 0, 0, :, 2]
 
         # if we are dealing with ALMA or PdBI data
         if visheader['NAXIS'] == 7:
             nfreq = visdata[0].data['DATA'][0, 0, 0, 0, :, 0, 0].size
             if nfreq > 1:
-                data_real = visdata[0].data['DATA'][:,0,0,:,:,:,0]
-                data_imag = visdata[0].data['DATA'][:,0,0,:,:,:,1]
-                data_wgt = visdata[0].data['DATA'][:,0,0,:,:,:,2]
+                data_real = visdata[0].data['DATA'][:, 0, 0, :, :, :, 0]
+                data_imag = visdata[0].data['DATA'][:, 0, 0, :, :, :, 1]
+                data_wgt = visdata[0].data['DATA'][:, 0, 0, :, :, :, 2]
             else:
-                data_real = visdata[0].data['DATA'][:,0,0,:,0,:,0]
-                data_imag = visdata[0].data['DATA'][:,0,0,:,0,:,1]
-                data_wgt = visdata[0].data['DATA'][:,0,0,:,0,:,2]
+                data_real = visdata[0].data['DATA'][:, 0, 0, :, 0, :, 0]
+                data_imag = visdata[0].data['DATA'][:, 0, 0, :, 0, :, 1]
+                data_wgt = visdata[0].data['DATA'][:, 0, 0, :, 0, :, 2]
 
         data_complex = numpy.array(data_real) + \
-                1j * numpy.array(data_imag)
+            1j * numpy.array(data_imag)
 
     else:
         from taskinit import tb
@@ -305,7 +309,7 @@ def visload(visfile):
         data_wgt = data_wgt.reshape(wgtshape)
         #data_complex = []
         #data_wgt = []
-        #for ipol in range(npol):
+        # for ipol in range(npol):
         #    data_complex.append(vis_complex[ipol, 0, :])
         #    data_wgt.append(vis_weight[ipol, :])
         #data_complex = numpy.array(data_complex)
@@ -313,8 +317,8 @@ def visload(visfile):
 
     return data_complex, data_wgt
 
-def getStatWgt(real_raw, imag_raw, wgt_raw):
 
+def getStatWgt(real_raw, imag_raw, wgt_raw):
     """
     Compute the weights as the rms scatter in the real and imaginary
     visibilities.
@@ -334,6 +338,7 @@ def getStatWgt(real_raw, imag_raw, wgt_raw):
             rms_avg = (rms_real + rms_imag) / 2.
             wgt_scaled[i, :] = 1 / rms_avg ** 2
     return wgt_scaled
+
 
 def statwt(visfileloc, newvisfileloc, ExcludeChannels=False):
     """
@@ -364,6 +369,7 @@ def statwt(visfileloc, newvisfileloc, ExcludeChannels=False):
         npol = data_real[0, 0, 0, :].size
         wgt = numpy.zeros([nvis, nspw, nfreq, npol])
     if data_real.ndim == 3:
+    # no spw
         nvis = data_real[:, 0, 0].size
         nspw = 0
         nfreq = data_real[0, :, 0].size
@@ -387,9 +393,10 @@ def statwt(visfileloc, newvisfileloc, ExcludeChannels=False):
                 wgt_temp = wgt[:, ispw, :, ipol]
                 wgt_temp[oktoreplace] = wgt_scaled[oktoreplace]
                 wgt[:, ispw, :, ipol] = wgt_temp
-        visfile[0].data['DATA'][:, 0, 0, :, :, :, 2] = wgt
-    else:
 
+        visfile[0].data['DATA'][:, 0, 0, :, :, 2] = wgt
+
+    else:
         for ipol in range(npol):
 
             # compute real and imaginary components of the visibilities
@@ -399,11 +406,19 @@ def statwt(visfileloc, newvisfileloc, ExcludeChannels=False):
 
             wgt_scaled = getStatWgt(real_raw, imag_raw, wgt_raw)
             wgt[:, :, ipol] = wgt_scaled
-        visfile[0].data['DATA'][:, 0, 0, :, :, 2] = wgt
+
+        try:
+            visfile[0].data['DATA'][:, 0, 0, :, :, :, 2] = wgt
+        except ValueError:
+            # wgt.ndim is 3 if data_real.dim is 3
+            if data_real.ndim == 3:
+                # wgt.shape is defined using nvis, nfreq, npol
+                visfile[0].data['DATA'][:, 0, 0, 0, :, :, 2] = wgt
 
     visfile.writeto(newvisfileloc)
 
     return
+
 
 def scalewt(visdataloc, newvisdataloc):
 
@@ -433,6 +448,7 @@ def scalewt(visdataloc, newvisdataloc):
             visfile[0].data['DATA'][:, 0, 0, 0, :, :, 2] = wgt_scaled
     visfile.writeto(newvisdataloc, clobber=True)
 
+
 def zerowt(visdataloc, newvisdataloc, ExcludeChannels):
 
     visfile = fits.open(visdataloc)
@@ -448,6 +464,8 @@ def zerowt(visdataloc, newvisdataloc, ExcludeChannels):
     visfile.writeto(newvisdataloc)
 
 # AS OF 2014-02-24, spectralavg IS NON-FUNCTIONAL
+
+
 def spectralavg(visdataloc, newvisdataloc, Nchannels):
     # bin in frequency space to user's desired spectral resolution
     vis_data = fits.open(visdataloc)

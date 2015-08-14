@@ -1,3 +1,4 @@
+Issue #1 
 08-14-2015:
 with checkvis.py
 
@@ -21,3 +22,13 @@ In checkvis.miriadVis()
 >> fits op=uvin in=visdata out=datamiriad
 if the vis file data have 7 axis, the output miriad vis file only have 6...
 # seems like sometimes miriad can handle >1 npol, so I am not sure what is going on even when the nspw and nchannel is already 1
+
+Issue #2
+08-14-2015:
+with uvutil.statwt()
+- array size mismatch
+
+when there is no spw column in data_real, but NAXIS = 7 in header
+data_real.ndim is 3
+which sets the dimension of the variable -- wgt 
+but NAXIS = 7 in header wants the wgt.ndim to 4

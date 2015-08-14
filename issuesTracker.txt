@@ -1,0 +1,16 @@
+08-13-2015:
+bug found in checkvis.uvmcmcfitVis(), which by default uses the keyword option miriad=True
+
+uvmcmcfitVis() calls
+uvmodel.replace which calls
+uvmodel.getVis which calls
+uvutil.uvload which defines the dim of uu based on only nfreq
+- in which if nfreq > 1, then there is no conflict
+- However, nfreq is often 1, in which the dim of uu would be 3: (nvis X nspw X npol)
+
+but later model_complex.reshape in getVis reshape the model into this dim of uu
+causing mismatch in array size in writeVis(miriad=True), which only depends on NAXIS
+    for NAXIS == 7, expects uu.ndim, hence real.ndim to be 4 instead of 3
+
+>> fix adding miriad=True in uvutil.uvload 
+>> since this is only a problem when miriad=True in uvmodel.writeVis

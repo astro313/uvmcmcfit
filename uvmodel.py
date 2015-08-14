@@ -5,7 +5,7 @@ Shane Bussmann
 Purpose: Take an input uv fits file and replace or subtract the visibilities
 with a model for the surface brightness map of the target.
 
-Inputs: 
+Inputs:
     sbmodelloc: location of fits image of model for surface brightness map
     visdataloc: location of uv fits data for target
 
@@ -27,6 +27,27 @@ import os
 
 
 def writeVis(vis_complex, visdataloc, modelvisloc, miriad=False):
+    """
+
+    Parameters
+    ----------
+    vis_complex: numpy.array
+
+    visdataloc: string
+        uv-data filename
+
+    miriad: Boolean
+        True: not using CASA, just python data manipulation, hence can run in ipython,
+        False: use CASA taskinit module, must run inside CASA
+
+
+    Returns
+    -------
+    modelvisloc: string
+        uv-model filename
+
+    """
+
 
     if miriad:
         os.system('rm -rf ' + modelvisloc)
@@ -54,7 +75,7 @@ def writeVis(vis_complex, visdataloc, modelvisloc, miriad=False):
         # replace the data visibilities with the model visibilities
         visfile[0].data = visibilities
         visfile.flush()
-        
+
     else:
         from taskinit import tb
         print("Writing visibility data to " + modelvisloc)
@@ -68,16 +89,16 @@ def writeVis(vis_complex, visdataloc, modelvisloc, miriad=False):
         tb.putcol('DATA', vis_complex)
         tb.close()
 
-def getVis(sbmodelloc, visdataloc):
+def getVis(sbmodelloc, visdataloc, miriad=False):
 
     #print(sbmodelloc, visdataloc)
     # read in the surface brightness map of the model
     modelimage = fits.getdata(sbmodelloc)
     modelheader = fits.getheader(sbmodelloc)
-     
+
     # load the uv data, including the phase center of the data
-    uu, vv, ww = uvutil.uvload(visdataloc)
-     
+    uu, vv, ww = uvutil.uvload(visdataloc, miriad=miriad)
+
     # load the uv data, including the phase center of the data
     pcd = uvutil.pcdload(visdataloc)
 
@@ -97,8 +118,8 @@ def getVis(sbmodelloc, visdataloc):
 
 def replace(sbmodelloc, visdataloc, modelvisloc, miriad=False):
 
-    vis_model = getVis(sbmodelloc, visdataloc)
-    
+    vis_model = getVis(sbmodelloc, visdataloc, miriad=miriad)
+
     #sub_complex, vis_weight = uvutil.visload(visdataloc)
 
     writeVis(vis_model, visdataloc, modelvisloc, miriad=miriad)
@@ -108,7 +129,7 @@ def replace(sbmodelloc, visdataloc, modelvisloc, miriad=False):
 def subtract(sbmodelloc, visdataloc, modelvisloc, miriad=False):
 
     vis_model = getVis(sbmodelloc, visdataloc)
-     
+
     # load the visibilities
     vis_data, vis_weight = uvutil.visload(visdataloc)
 
@@ -131,7 +152,7 @@ def add(sbmodelloc, visdataloc, WeightByRMS=True, ExcludeChannels='none'):
     # read in the uvfits data
     visfile = fits.open(visdataloc)
     visibilities = visfile[0].data
-     
+
     # load the uv data, including the phase center of the data
     uu, vv, pcd = uvutil.uvload(visfile)
 

@@ -57,7 +57,33 @@ def pcdload(visfile):
         pcd = [pcd_ra, pcd_dec]
         return pcd
 
-def uvload(visfile):
+def uvload(visfile, miriad=False):
+    """load in visibilities from a uv-file
+
+    Parameters
+    ----------
+    visfile: string
+        visibility data filename, can be model or data
+    miriad: Boolean
+        added to fix checkvvis.uvmcmcfitVis array size mismatch
+        normally, this is False, except in checkvvis.uvmcmcfitVis
+        this is only needed when miriad=True, becuase of the way uvmodel.writeVis is written
+
+    Returns
+    -------
+    uu: numpy.array
+        u visibilities
+    vv: numpy.array
+        v visibilities
+    ww: numpy.array
+
+
+    Note
+    ----
+    Although a better solution to fix the array size mismatch problem that arises when calling `checkvis.uvmcmcfitVis` maybe something similar to the to-be-implemented function: uvmodel.add
+        which looks for nspw to shape model_complex
+    """
+
 
     checker = visfile.find('uvfits')
     if checker == -1:
@@ -85,9 +111,14 @@ def uvload(visfile):
                 vv = numpy.zeros([nvis, nspw, nfreq, npol])
                 ww = numpy.zeros([nvis, nspw, nfreq, npol])
             else:
-                uu = numpy.zeros([nvis, nspw, npol])
-                vv = numpy.zeros([nvis, nspw, npol])
-                ww = numpy.zeros([nvis, nspw, npol])
+                if miriad is True:
+                    uu = numpy.zeros([nvis, nspw, nfreq, npol])
+                    vv = numpy.zeros([nvis, nspw, nfreq, npol])
+                    ww = numpy.zeros([nvis, nspw, nfreq, npol])
+                else:
+                    uu = numpy.zeros([nvis, nspw, npol])
+                    vv = numpy.zeros([nvis, nspw, npol])
+                    ww = numpy.zeros([nvis, nspw, npol])
             #wgt = numpy.zeros([nvis, nspw, nfreq, npol])
             for ispw in range(nspw):
                 if nspw > 1:
@@ -99,6 +130,7 @@ def uvload(visfile):
                         freqif = freq0
                 #uu[:, ispw] = freqif * visibilities['UU']
                 #vv[:, ispw] = freqif * visibilities['VV']
+
                 for ipol in range(npol):
                    # then compute the spatial frequencies:
                     if nfreq > 1:
@@ -110,9 +142,18 @@ def uvload(visfile):
                         freqvis = numpy.meshgrid(freq, visibilities['WW'])
                         ww[:, ispw, :, ipol] = freqvis[0] * freqvis[1]
                     else:
-                        uu[:, ispw, ipol] = freqif * visibilities['UU']
-                        vv[:, ispw, ipol] = freqif * visibilities['VV']
-                        ww[:, ispw, ipol] = freqif * visibilities['WW']
+                        if miriad is True:
+                            freq = (numpy.arange(nfreq) - cfreq + 1) * dfreq + freqif
+                            freqvis = numpy.meshgrid(freq, visibilities['UU'])
+                            uu[:, ispw, :, ipol] = freqvis[0] * freqvis[1]
+                            freqvis = numpy.meshgrid(freq, visibilities['VV'])
+                            vv[:, ispw, :, ipol] = freqvis[0] * freqvis[1]
+                            freqvis = numpy.meshgrid(freq, visibilities['WW'])
+                            ww[:, ispw, :, ipol] = freqvis[0] * freqvis[1]
+                        else:
+                            uu[:, ispw, ipol] = freqif * visibilities['UU']
+                            vv[:, ispw, ipol] = freqif * visibilities['VV']
+                            ww[:, ispw, ipol] = freqif * visibilities['WW']
 
         if visheader['NAXIS'] == 6:
 
@@ -152,7 +193,7 @@ def uvload(visfile):
                     uu[:, ipol] = freqif * visibilities['UU']
                     vv[:, ipol] = freqif * visibilities['VV']
                     ww[:, ipol] = freqif * visibilities['WW']
-    
+
     else:
         from taskinit import tb
         # read in the uvfits data
@@ -253,7 +294,7 @@ def visload(visfile):
             npol = wgtshape[0]
             nrow = wgtshape[1]
             wgtshape = (npol, 1, nrow)
-        
+
         data_wgt = data_wgt.reshape(wgtshape)
         #data_complex = []
         #data_wgt = []
@@ -268,7 +309,7 @@ def visload(visfile):
 def getStatWgt(real_raw, imag_raw, wgt_raw):
 
     """
-    Compute the weights as the rms scatter in the real and imaginary 
+    Compute the weights as the rms scatter in the real and imaginary
     visibilities.
     """
 

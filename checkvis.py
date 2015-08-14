@@ -87,7 +87,7 @@ def miriadVis(model, data, simfile):
     Use miriad to make a simulated visibility dataset given a model and data.
     """
 
-    # first turn the model image into miriad format
+    # first turn the model image into miriad format, image domain
     try:
         oldbase_model = os.path.splitext(model)[0]
         modelmiriad = oldbase_model + '.miriad'
@@ -101,7 +101,7 @@ def miriadVis(model, data, simfile):
     except:
         print("Uh oh, couldn't make the miriad model image.")
 
-    # next, turn the observed visibilities into miriad format
+    # next, turn the observed visibilities into miriad format, uv domain
     oldbase_data = os.path.splitext(data)[0]
     datamiriad = oldbase_data + '.miriad'
     cmd = 'rm -rf ' + datamiriad

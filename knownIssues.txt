@@ -1,0 +1,23 @@
+08-14-2015:
+with checkvis.py
+
+miriad uvmodel cannot handle multiple polarization and spw 
+Work around: use CASA mstransform to combine vis-data into one channel, one spw, and one polarization and supply this 'data.uvfits' to checkvis.miriadvis()
+
+# Look at the .uvfits input files for iterFig()
+rom astropy.io import fits
+im = fits.open('UVmcmc.uvfits')
+im[0].data['DATA'].shape
+
+
+im1 = fits.open('mirvisTEST.uvfits')
+im1[0].data['DATA'].shape
+----
+
+Problem:
+array size mistach between the uvfits made with uvmcmcfit VS miriad
+
+In checkvis.miriadVis()
+>> fits op=uvin in=visdata out=datamiriad
+if the vis file data have 7 axis, the output miriad vis file only have 6...
+# seems like sometimes miriad can handle >1 npol, so I am not sure what is going on even when the nspw and nchannel is already 1

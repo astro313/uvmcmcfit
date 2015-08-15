@@ -9,8 +9,6 @@ from __future__ import print_function
 
 import numpy
 from astropy.io import fits
-from taskinit import tb, ms
-
 
 def pcdload(visfile):
 
@@ -72,6 +70,7 @@ def MSpcd(msFile):
     which method gives the phase center that correspond to that used in CASA imaging needs further investigation
     """
 
+    from taskinit import tb
     tb.open(msFile + '/FIELD')
     old = tb.getcol('DELAY_DIR') #, fieldid
     new = tb.getcol('PHASE_DIR')
@@ -112,6 +111,7 @@ def MSpcd2(msFile):
     (need further investigation)
     """
 
+    from taskinit import ms
     ms.open(msFile)
     pc = ms.getfielddirmeas()
     if not isinstance(pc, dict) is True:
@@ -148,6 +148,7 @@ def oldMSpcd(msFile):
     the following will give the old phase center otherwise
     """
 
+    from taskinit import tb
     tb.open(msFile + '/SOURCE')
     pcd_ra = tb.getcol('DIRECTION')[0][0] * 180 / numpy.pi
     if pcd_ra < 0:
@@ -303,7 +304,7 @@ def uvload(visfile):
                     ww[:, ipol] = freqif * visibilities['WW']
 
     else:
-
+        from taskinit import tb
         # read in the uvfits data
         tb.open(visfile)
         uvw = tb.getcol('UVW')
@@ -385,7 +386,7 @@ def visload(visfile):
             1j * numpy.array(data_imag)
 
     else:
-
+        from taskinit import tb
         # read in the CASA MS
         tb.open(visfile)
         vis_complex = tb.getcol('DATA')
@@ -675,6 +676,7 @@ def spectralavg(visdataloc, newvisdataloc, Nchannels):
     vis_data[0].data['DATA'][:] = newvis
     vis_data.writeto(newvisdataloc)
 
+
 def getFreqfromtb(msFile):
     """get a list of IF from the measurement set table
     same as ('CHAN_FREQ') if
@@ -690,6 +692,7 @@ def getFreqfromtb(msFile):
         reference frequency in Hz
     """
 
+    from taskinit import tb
     tb.open(msFile+'/SPECTRAL_WINDOW')
     freq0 = tb.getcol('REF_FREQUENCY')
     nchan = tb.getcol('NUM_CHAN')
@@ -714,11 +717,8 @@ def checkMS(msFile, cont=True):
         number of channels
 
     """
-    try:
-        ms.open(msFile)
-    except NameError:
-        print("*** Please run this under CASA ***")
-
+    from taskinit import ms
+    ms.open(msFile)
     metadata = ms.metadata()
     ms.done()
     nspw = metadata.nspw()

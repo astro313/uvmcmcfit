@@ -77,6 +77,7 @@ def writeVis(vis_complex, visdataloc, modelvisloc, miriad=False):
                     visibilities['DATA'][:, 0, 0, :, :, :, 1] = imag
                 except ValueError:
                     # mistmatach arise when uu.ndim is 3
+                    # which would be the case if nfreq = 0
                     # vis, 0, 0, spw, chan(freq), pol, (real, imag, weights)
                     visibilities['DATA'][:, 0, 0, :, 0, :, 0] = real
                     visibilities['DATA'][:, 0, 0, :, 0, :, 1] = imag
@@ -104,7 +105,7 @@ def writeVis(vis_complex, visdataloc, modelvisloc, miriad=False):
         tb.putcol('DATA', vis_complex)
         tb.close()
 
-def getVis(sbmodelloc, visdataloc, miriad=False):
+def getVis(sbmodelloc, visdataloc):
 
     #print(sbmodelloc, visdataloc)
     # read in the surface brightness map of the model
@@ -112,7 +113,7 @@ def getVis(sbmodelloc, visdataloc, miriad=False):
     modelheader = fits.getheader(sbmodelloc)
 
     # load the uv data, including the phase center of the data
-    uu, vv, ww = uvutil.uvload(visdataloc, miriad=miriad)
+    uu, vv, ww = uvutil.uvload(visdataloc)
 
     # load the uv data, including the phase center of the data
     pcd = uvutil.pcdload(visdataloc)
@@ -133,7 +134,7 @@ def getVis(sbmodelloc, visdataloc, miriad=False):
 
 def replace(sbmodelloc, visdataloc, modelvisloc, miriad=False):
 
-    vis_model = getVis(sbmodelloc, visdataloc, miriad=miriad)
+    vis_model = getVis(sbmodelloc, visdataloc)
 
     #sub_complex, vis_weight = uvutil.visload(visdataloc)
 

@@ -9,6 +9,7 @@ from __future__ import print_function
 
 import numpy
 from astropy.io import fits
+from taskinit import tb, ms
 
 
 def pcdload(visfile):
@@ -48,28 +49,122 @@ def pcdload(visfile):
 
     else:
         # CASA MS
-        from taskinit import tb
-        tb.open(visfile + '/SOURCE')
-        pcd_ra = tb.getcol('DIRECTION')[0][0] * 180 / numpy.pi
-        if pcd_ra < 0:
-            pcd_ra += 360
-        pcd_dec = tb.getcol('DIRECTION')[1][0] * 180 / numpy.pi
-        tb.close()
-        pcd = [pcd_ra, pcd_dec]
+        pcd = MSpcd(visfile)
         return pcd
 
 
-def uvload(visfile, miriad=False):
+def MSpcd(msFile):
+    """
+    Explore different ways to get phase center consistent with data that has been regridded from one epoch to another
+
+    Parameters
+    ----------
+    msFile: string
+        measurement set filename
+
+    Returns
+    -------
+    pcd: list
+        phase center
+
+    Note
+    ----
+    which method gives the phase center that correspond to that used in CASA imaging needs further investigation
+    """
+
+    tb.open(msFile + '/FIELD')
+    old = tb.getcol('DELAY_DIR') #, fieldid
+    new = tb.getcol('PHASE_DIR')
+
+    def shiftRA(ra):
+        if ra < 0.: ra += numpy.pi * 2
+        return ra
+    old[0] = shiftRA(old[0])
+    new[0] = shiftRA(new[0])
+
+    # old phase center
+    # _pcd_ra, _pcd_dec = old[0] * 180. / numpy.pi, old[1] * 180. / numpy.pi
+
+    # new phase center
+    pcd_ra, pcd_dec = new[0] * 180. / numpy.pi, new[1] * 180. / numpy.pi
+    tb.close()
+    pcd = pcd_ra[0][0], pcd_dec[0][0]
+    return list(pcd)
+
+
+def MSpcd2(msFile):
+    """using CASA taskinit.ms
+
+    Parameters
+    ----------
+    msFile: string
+        measurement set filename
+
+    Returns
+    -------
+    pcd:
+        phase center
+
+    Note
+    ----
+    may need further modification if nField > 1
+    unless it is the same for all fields
+    (need further investigation)
+    """
+
+    ms.open(msFile)
+    pc = ms.getfielddirmeas()
+    if not isinstance(pc, dict) is True:
+        pc()
+    epoch = pc['refer']
+    pcd_dec = pc['m1']['value'] * 180 / numpy.pi
+    pcd_ra = pc['m0']['value'] * 180 / numpy.pi
+    if pcd_ra < 0:
+        pcd_ra += 360
+    ms.done()
+    pcd = [pcd_ra, pcd_dec]
+    return pcd
+
+
+def oldMSpcd(msFile):
+    """
+    get phase center
+    works for most data without uv-regrid
+
+    Parameters
+    ----------
+    msFile: string
+        measurement set filename
+
+    Returns
+    -------
+    pcd:
+        phase center
+
+    Note
+    ----
+    by Shane
+    works for data without uv-regrid using CASA's fixvis()
+    the following will give the old phase center otherwise
+    """
+
+    tb.open(msFile + '/SOURCE')
+    pcd_ra = tb.getcol('DIRECTION')[0][0] * 180 / numpy.pi
+    if pcd_ra < 0:
+        pcd_ra += 360
+    pcd_dec = tb.getcol('DIRECTION')[1][0] * 180 / numpy.pi
+    tb.close()
+    pcd = [pcd_ra, pcd_dec]
+    return pcd
+
+
+def uvload(visfile):
     """load in visibilities from a uv-file
 
     Parameters
     ----------
     visfile: string
         visibility data filename, can be model or data
-    miriad: Boolean
-        added to fix checkvvis.uvmcmcfitVis array size mismatch
-        normally, this is False, except in checkvvis.uvmcmcfitVis
-        this is only needed when miriad=True, becuase of the way uvmodel.writeVis is written
 
     Returns
     -------
@@ -126,6 +221,9 @@ def uvload(visfile, miriad=False):
                 ww = numpy.zeros([nvis, nspw, npol])
 
             #wgt = numpy.zeros([nvis, nspw, nfreq, npol])
+
+            # get spw frequencies
+            # reference freq + offset
             for ispw in range(nspw):
                 if nspw > 1:
                     freqif = freq0 + visfreq['IF FREQ'][0][ispw]
@@ -205,7 +303,7 @@ def uvload(visfile, miriad=False):
                     ww[:, ipol] = freqif * visibilities['WW']
 
     else:
-        from taskinit import tb
+
         # read in the uvfits data
         tb.open(visfile)
         uvw = tb.getcol('UVW')
@@ -287,7 +385,7 @@ def visload(visfile):
             1j * numpy.array(data_imag)
 
     else:
-        from taskinit import tb
+
         # read in the CASA MS
         tb.open(visfile)
         vis_complex = tb.getcol('DATA')
@@ -421,6 +519,21 @@ def statwt(visfileloc, newvisfileloc, ExcludeChannels=False):
 
 
 def scalewt(visdataloc, newvisdataloc):
+    """
+    scale the weights such that:
+    Sum(wgt * real^2 + wgt * imag^2) = N_visibilities
+
+    Parameters
+    ----------
+    visdataloc: string
+        uv-data filename
+
+    Returns
+    -------
+    newvisdataloc: string
+        output scaled uv-data filename
+
+    """
 
     visfile = fits.open(visdataloc)
     data_complex, data_wgt = visload(visdataloc)
@@ -561,3 +674,58 @@ def spectralavg(visdataloc, newvisdataloc, Nchannels):
         vis_data[0].header['CDELT4'] = newcdelt4
     vis_data[0].data['DATA'][:] = newvis
     vis_data.writeto(newvisdataloc)
+
+def getFreqfromtb(msFile):
+    """get a list of IF from the measurement set table
+    same as ('CHAN_FREQ') if
+
+    Parameters
+    ----------
+    msFile: string
+      CASA measurement set
+
+    Returns
+    -------
+    freq0: numpy.ndarray
+        reference frequency in Hz
+    """
+
+    tb.open(msFile+'/SPECTRAL_WINDOW')
+    freq0 = tb.getcol('REF_FREQUENCY')
+    nchan = tb.getcol('NUM_CHAN')
+    tb.close()
+    return freq0
+
+
+def checkMS(msFile, cont=True):
+    """ get the number of spw and channels in the measurement set
+    for continuum: combine into 1 channel and spw before running uvmcmcfit
+
+    Parameters
+    ----------
+    msFile: string
+        CASA measurement set
+
+    Returns
+    -------
+    nspw:
+        number of spw
+    nchan:
+        number of channels
+
+    """
+    try:
+        ms.open(msFile)
+    except NameError:
+        print("*** Please run this under CASA ***")
+
+    metadata = ms.metadata()
+    ms.done()
+    nspw = metadata.nspw()
+    for i in range(nspw):
+        # number of channels in each spw
+        nchan = metadata.nchan(spw)
+    metadata.done()
+    return nspw, nchan
+
+

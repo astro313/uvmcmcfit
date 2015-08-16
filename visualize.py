@@ -111,7 +111,7 @@ def evolvePDF(bestfitloc='posteriorpdf.fits', stepsize=50000):
         tag = 'evolution' + strstep + '.' + striresult + '.'
         trimresults = fitresults[start:start + stepsize]
         start += stepsize
-        visualutil.plotPDF(trimresults, tag, limits=limits, Ngood=1000, 
+        visualutil.plotPDF(trimresults, tag, limits=limits, Ngood=1000,
                 axes='initial')
 
 def covariance(bestfitloc='posteriorpdf.fits'):
@@ -131,7 +131,7 @@ def covariance(bestfitloc='posteriorpdf.fits'):
 
 
     # plotting parameters
-    rc('font',**{'family':'sans-serif', 'sans-serif':['Arial Narrow'], 
+    rc('font',**{'family':'sans-serif', 'sans-serif':['Arial Narrow'],
         'size':'6'})
 
     posteriorpdf = Table.read(bestfitloc)
@@ -198,13 +198,16 @@ def covariance(bestfitloc='posteriorpdf.fits'):
 
     #plt.suptitle(iau_address, x=0.5, y=0.987, fontsize='xx-large')
     savefig('covariance.pdf')
-    plt.clf()        
+    plt.clf()
+
 
 def printFitParam(fitresult, fitKeys, mag=False):
-    """ Print parameters for this model                                                         
-    mag: bool                                                                                   
-        if True, print magnification factors as well                                            
     """
+    Print parameters for this model
+    mag: Boolean
+        if True, print magnification factors as well
+    """
+
     if mag is False:
         fitresult = fitresult[:-4]
         fitKeys = fitKeys[:-4]
@@ -213,16 +216,17 @@ def printFitParam(fitresult, fitKeys, mag=False):
     for k, v in zip(fitKeys, fitresult):
         print("%s : %.4f" %(k,v))
 
+
 def bestFit(bestfitloc='posteriorpdf.fits', showOptical=False, cleanup=True,
         interactive=True):
 
-    """ 
+    """
 
     Read posterior PDF and identify best-fit parameters.  Plot the best-fit
     model and compare to the data.  Also plot the residuals obtained after
     subtracting the best-fit model from the data and compare to the data.
     Optionally plot the best available optical image and compare to the data.
-    
+
     """
 
 
@@ -243,16 +247,17 @@ def bestFit(bestfitloc='posteriorpdf.fits', showOptical=False, cleanup=True,
     visualutil.plotFit(config, bestfit, tag=tag, cleanup=cleanup,
             showOptical=showOptical, interactive=interactive)
 
+
 def goodFits(bestfitloc='posteriorpdf.fits', Nfits=12, Ngood=5000,
         cleanup=True, interactive=True, showOptical=False):
 
-    """ 
+    """
 
     Read posterior PDF and draw Nfits realizations from the final Ngood models
     at random.  Plot the model from each realization and compare to the data.
     Also plot the residuals obtained after subtracting the model from the data
     and compare to the data.  By default: Nfits = 12, Ngood=5000.
-    
+
     """
 
     import modifypdf
@@ -264,7 +269,7 @@ def goodFits(bestfitloc='posteriorpdf.fits', Nfits=12, Ngood=5000,
     fitresults = fits.getdata(bestfitloc)
     fitresults = fitresults[-Ngood:]
     fitresults = modifypdf.prune(fitresults)
-    
+
     # get keys
     from astropy.table import Table
     fitKeys = Table.read(bestfitloc).keys()

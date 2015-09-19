@@ -557,7 +557,11 @@ def scalewt(visdataloc, newvisdataloc):
         visfile[0].data['DATA'][:, 0, 0, :, :, :, 2] = wgt_scaled
     else:
         if visfile[0].header['NAXIS'] == 6:
-            visfile[0].data['DATA'][:, 0, 0, :, :, 2] = wgt_scaled
+            nfreq = visfile[0].data['DATA'][0, 0, 0, :, 0, 0].size
+            if nfreq > 1:
+                visfile[0].data['DATA'][:, 0, 0, :, :, 2] = wgt_scaled
+            else:
+                visfile[0].data['DATA'][:, 0, 0, 0, :, 2] = wgt_scaled
         if visfile[0].header['NAXIS'] == 7:
             visfile[0].data['DATA'][:, 0, 0, 0, :, :, 2] = wgt_scaled
     visfile.writeto(newvisdataloc, clobber=True)

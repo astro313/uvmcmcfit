@@ -104,6 +104,7 @@ def makeSBmap(config, fitresult):
 
     # read the input parameters
     paramData = setuputil.loadParams(config)
+
     nlensedsource = paramData['nlensedsource']
     nlensedregions = paramData['nlensedregions']
     npar_previous = 0
@@ -203,6 +204,7 @@ def makeSBmap(config, fitresult):
             plt.imshow(mumap, origin='lower')
             plt.contour(mumap, levels=[mumap.max()/1.1])
             import pdb; pdb.set_trace()
+
         SBmap_all += SBmap
         LensedSBmap_all += LensedSBmap
 
@@ -622,6 +624,10 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
     configkeystring = " ".join(configkeys)
     regionlist = re.findall('Region.', configkeystring)
     nregion = len(regionlist)
+
+    from copy import deepcopy
+    fitresultDict = deepcopy(fitresult)
+
     for iregion in range(nregion):
         region = 'Region' + str(iregion)
         cr = config[region]
@@ -840,7 +846,77 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
 
     # plot the critical curve
     #plt.contour(cmodx, cmody, dmu, colors='orange', levels=[100])
-    #axisrange = plt.axis()
+    caustics = True
+    if caustics:
+        # Keeton 00
+        phi = numpy.linspace(0.0, 2*numpy.pi, 2000)
+
+        def cart2pol(x, y):
+            """ Cartesian to Polar
+            """
+            x, y = numpy.asarray(x), numpy.asarray(y)
+            r = numpy.sqrt(x**2 + y**2)
+            theta = numpy.arctan2(y, x)
+            return r, theta
+
+        def pol2cart(r, theta):
+            """ Polar to Cartesian
+            """
+            r, theta = numpy.asarray(r), numpy.asarray(theta)
+            x, y = r * numpy.cos(theta), r * numpy.sin(theta)
+            return x, y
+        # no shear
+        # loop through each region
+        for ireg in range(nregion):
+            region = 'Region' + str(ireg)
+            # loop through each lens
+            for jlens in range(nlens):
+                lens = 'Lens' + str(jlens)
+                sp = ' '
+                qStr = sp.join((region, lens, 'AxialRatio'))
+                bStr = sp.join((region, lens, 'EinsteinRadius'))
+                paStr = sp.join((region, lens, 'PositionAngle'))
+                xxLensStr = sp.join((region, lens, 'DeltaRA'))
+                yyLensStr = sp.join((region, lens, 'DeltaDec'))
+                xxLens = fitresultDict[xxLensStr]
+                yyLens = fitresultDict[yyLensStr]
+                PA = fitresultDict[paStr]
+                PA = 90 - PA
+                q = fitresultDict[qStr]
+                qq = numpy.sqrt(1 - q**2)
+                b = fitresultDict[bStr]     # in arcsec
+                Delta = numpy.sqrt(numpy.cos(phi)**2 + q**2 * numpy.sin(phi)**2)
+                # if not circular
+                if q != 1.0:
+                    # radial caustic
+                    x = (b * numpy.sqrt(q)/qq) * numpy.arcsinh(numpy.cos(phi)*qq/q)
+                    y = (-b * numpy.sqrt(q)/qq) * numpy.arcsin(numpy.sin(phi)*qq/q)
+
+                    # tangential
+                    xt = b * (((numpy.sqrt(q)/Delta) * numpy.cos(phi)) - ((numpy.sqrt(q)/qq)*numpy.arcsinh(qq/q * numpy.cos(phi))))
+
+                    yt = -b * (((numpy.sqrt(q)/Delta) * numpy.sin(phi)) - ((numpy.sqrt(q)/qq) * numpy.arcsin(qq * numpy.sin(phi))))
+
+                    # rotate to match image using PA
+                    rr, thetar = cart2pol(x, y)
+                    x, y = pol2cart(rr, thetar + PA * numpy.pi/180.)
+                    x += xxLens
+                    y += yyLens
+
+                    rt, thetat = cart2pol(xt, yt)
+                    xt, yt = pol2cart(rt, thetat + PA * numpy.pi/180.)
+                    xt += xxLens
+                    yt += yyLens
+
+                # if circular
+                else:
+                    None
+
+                drawCaustic = numpy.atleast_3d([[x, y], [xt, yt]])
+                for i in range(drawCaustic.shape[0]):
+                    plt.plot(drawCaustic[i, 0, :], drawCaustic[i, 1, :], 'k-', alpha=(1.-(ireg+1)/5.-(jlens+1)/3.))
+
+    # axisrange = plt.axis()
     axisrange = numpy.array([xhi,xlo,ylo,yhi]).astype(float)
     plt.axis(axisrange)
 

@@ -38,8 +38,8 @@ def pcdload(visfile):
 
         if visheader['NAXIS'] == 6:
 
-            pcd_ra = visdata[0].header['CRVAL6']
-            pcd_dec = visdata[0].header['CRVAL7']
+            pcd_ra = visdata[0].header['CRVAL5']
+            pcd_dec = visdata[0].header['CRVAL6']
             if pcd_ra < 0:
                 pcd_ra += 360
             pcd = [pcd_ra, pcd_dec]

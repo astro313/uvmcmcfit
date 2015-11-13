@@ -708,8 +708,9 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
             ax.add_artist(elens)
 
     # get the image centroid in model pixel coordinates
-    headim = data[0].header
-    headmod = model[0].header
+    headim = data[0].header          # red contours
+    headmod = model[0].header        # grayscale
+
     im = data[0].data
     im = im[0, 0, :, :]
 
@@ -733,12 +734,18 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
     cell = numpy.sqrt( abs(cdelt1) * abs(cdelt2) )
 
     im_model = model[0].data
+
+    # Hack to read in optical data in extension 1 instead of 0
+    if im_model is None:
+        im_model = model[1].data
+        headmod = model[1].header
     if im_model.ndim == 4:
         im_model = im_model[0, 0, :, :]
     #nx_model = im_model[0, :].size
     pixextent = radialextent / cell
     datawcs = wcs.WCS(headim, naxis=2)
     pix = datawcs.wcs_world2pix(ra_centroid, dec_centroid, 1)
+
     x0 = numpy.round(pix[0])
     y0 = numpy.round(pix[1])
     imrady = numpy.round(radialextent / cell)# nymod / 2.
@@ -991,6 +998,12 @@ def plotFit(config, fitresult, tag='', cleanup=True, showOptical=False,
 
     Plot a particular model fit.
 
+    Parameters
+    ------
+    showOptical: Bool
+                 True: will plot data as contour, optical as grayscale
+
+
     """
 
     from astropy.io import fits
@@ -1108,3 +1121,4 @@ def preProcess(config, paramData, fitresult, tag='', cleanup=True,
         plotFit(config, paramData, parameters, regioni, tag=tag,
                 cleanup=cleanup, showOptical=showOptical,
                 interactive=interactive)
+

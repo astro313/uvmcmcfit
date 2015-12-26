@@ -529,9 +529,12 @@ def makeImage(config, interactive=True, miriad=False, idtag=''):
         # ---------------------------------------
         # invert and clean the model visibilities
 
-        # remove any existing clean products
+        # remove any existing clean products, except for .mask
+        # mask should be re-usable
         imloc = target + '_clean_model'
-        os.system('rm -rf ' + imloc + '*')
+#        os.system('rm -rf ' + imloc + '*')
+        for ext in ['.flux', '.image', '.model', 'pbcor', '.psf', '.residual', '.flux.pbcoverage']:
+            rmtables(imloc + ext)
 
         # handle lists of visibility files
         if type(visfile) is list:
@@ -558,9 +561,11 @@ def makeImage(config, interactive=True, miriad=False, idtag=''):
         # ---------------------------------------
         # invert and clean the residual visibilities
 
-        # remove any existing clean products
+        # remove any existing clean products, except for .mask
         imloc = target + '_clean_residual'
-        os.system('rm -rf ' + imloc + '*')
+#        os.system('rm -rf ' + imloc + '*')
+        for ext in ['.flux', '.image', '.model', 'pbcor', '.psf', '.residual', '.flux.pbcoverage']:
+            rmtables(imloc + ext)
 
         # handle lists of visibility files
         if type(visfile) is list:

@@ -400,7 +400,7 @@ def makeImage(config, interactive=True, miriad=False, idtag=''):
     import os
     from astropy.io import fits
     import miriadutil
-
+    from rmtables import rmtables
 
     visfile = config['UVData']
     target = config['ObjectName']

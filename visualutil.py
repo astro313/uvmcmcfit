@@ -550,6 +550,7 @@ def makeImage(config, interactive=True, miriad=False, idtag=''):
         # use CASA's clean task to make the images
         print("*** CLEANING with the following options: *** \n")
         print("vis={:s}, imagename={:s}, mode='mfs', niters=10000, threshold='0.2mJy', interactive={:}, mask={:s},imsize={:s},cell={:s},weighting='briggs',robust=0.5").format(modelvisloc, imloc, interactive,mask, imsize, cell)
+
         clean(vis=modelvisloc, imagename=imloc, mode='mfs', niter=10000,
             threshold='0.2mJy', interactive=interactive, mask=mask,
             imsize=imsize, cell=cell, weighting='briggs', robust=0.5)
@@ -893,7 +894,7 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
                 xxLens = fitresultDict[xxLensStr]
                 yyLens = fitresultDict[yyLensStr]
                 PA = fitresultDict[paStr]
-                PA = 90 - PA
+                PA = 90 - PA               # RA increasing to the left (E is to the left or N)
                 q = fitresultDict[qStr]
                 qq = numpy.sqrt(1 - q**2)
                 b = fitresultDict[bStr]     # in arcsec
@@ -920,11 +921,16 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
                     xt += xxLens
                     yt += yyLens
 
+                    drawCaustic = numpy.atleast_3d([[x, y], [xt, yt]])
+
                 # if circular
                 else:
-                    None
+                    x = -b * numpy.cos(phi) + xxLens
+                    y = -b * numpy.sin(phi) + yyLens
+                    drawCaustic = numpy.atleast_3d([xr, yr])
+                    drawCaustic = drawCaustic.reshape(drawCaustic.shape[2], drawCaustic.shape[0], drawCaustic.shape[1])
 
-                drawCaustic = numpy.atleast_3d([[x, y], [xt, yt]])
+
                 for i in range(drawCaustic.shape[0]):
                     plt.plot(drawCaustic[i, 0, :], drawCaustic[i, 1, :], 'k-', alpha=(1.-(ireg+1)/5.-(jlens+1)/3.))
 

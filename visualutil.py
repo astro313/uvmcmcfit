@@ -709,7 +709,7 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
             lens_bmaj = meansize / numpy.sqrt(parameters[i5 + 3])
             lens_bmin = meansize * numpy.sqrt(parameters[i5 + 3])
             elens = Ellipse((xxx, yyy), lens_bmaj, lens_bmin, \
-                    angle=lens_pa, ec='orange', lw=1.0, \
+                    angle=lens_pa, ec='orange', lw=2.0, \
                     zorder=20, fill=False)
             ax.add_artist(elens)
 
@@ -856,12 +856,12 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
             linestyles=pcline, linewidths=1.5)
     plt.contour(cmodx, cmody, datacut, colors=ncolor, levels=nlevs, \
             linestyles=ncline, linewidths=1.5)
-
     # plot the critical curve
     #plt.contour(cmodx, cmody, dmu, colors='orange', levels=[100])
+
     caustics = True
     if caustics:
-        # Keeton 00
+        # Keeton 00, Kormann+94
         phi = numpy.linspace(0.0, 2*numpy.pi, 2000)
 
         def cart2pol(x, y):
@@ -902,10 +902,10 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
                 # if not circular
                 if q != 1.0:
                     # radial caustic
-                    x = (b * numpy.sqrt(q)/qq) * numpy.arcsinh(numpy.cos(phi)*qq/q)
-                    y = (-b * numpy.sqrt(q)/qq) * numpy.arcsin(numpy.sin(phi)*qq/q)
+                    x = (-b * numpy.sqrt(q)/qq) * numpy.arcsinh(numpy.cos(phi)*qq/q)
+                    y = (b * numpy.sqrt(q)/qq) * numpy.arcsin(numpy.sin(phi)*qq)
 
-                    # tangential
+                    # tangential, Kormann+94 eqn 31
                     xt = b * (((numpy.sqrt(q)/Delta) * numpy.cos(phi)) - ((numpy.sqrt(q)/qq)*numpy.arcsinh(qq/q * numpy.cos(phi))))
 
                     yt = -b * (((numpy.sqrt(q)/Delta) * numpy.sin(phi)) - ((numpy.sqrt(q)/qq) * numpy.arcsin(qq * numpy.sin(phi))))
@@ -932,7 +932,7 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
 
 
                 for i in range(drawCaustic.shape[0]):
-                    plt.plot(drawCaustic[i, 0, :], drawCaustic[i, 1, :], 'k-', alpha=(1.-(ireg+1)/5.-(jlens+1)/3.))
+                    plt.plot(drawCaustic[i, 0, :], drawCaustic[i, 1, :], color='cyan', lw='2', zorder=20) # alpha=(1.-(ireg+1)/5.-(jlens+1)/3.)
 
     # axisrange = plt.axis()
     axisrange = numpy.array([xhi,xlo,ylo,yhi]).astype(float)

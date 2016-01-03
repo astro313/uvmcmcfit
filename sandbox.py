@@ -19,12 +19,20 @@ import sample_vis
 import uvutil
 
 
-def plot(cleanup=True, configloc='sandbox.yaml', interactive=True):
+def plot(cleanup=True, configloc='sandbox.yaml', interactive=True, threshold=1.2):
+    '''
+
+    Parameters
+    ----------
+    threshold: float
+        in mJy, cleaning threshold
+
+    '''
 
     # read the input parameters
     configfile = open(configloc, 'r')
     config = yaml.load(configfile)
-    
+
     paramSetup = setuputil.loadParams(config)
     fixindx = setuputil.fixParams(paramSetup)
     testfit = paramSetup['p_l']
@@ -40,7 +48,7 @@ def plot(cleanup=True, configloc='sandbox.yaml', interactive=True):
     uuu = uuu[positive_definite]
     vvv = vvv[positive_definite]
 
-    testlnprob, testmu = lnprob(testfit, vis_complex, wgt, uuu, vvv, pcd, 
+    testlnprob, testmu = lnprob(testfit, vis_complex, wgt, uuu, vvv, pcd,
            fixindx, paramSetup, computeamp=True)
     # prepend 1 dummy value to represent lnprob
     testfit = numpy.append(testlnprob, testfit)
@@ -48,18 +56,18 @@ def plot(cleanup=True, configloc='sandbox.yaml', interactive=True):
     nlensedsource = paramSetup['nlensedsource']
     nlensedregions = paramSetup['nlensedregions']
     nmu = 2 * (numpy.array(nlensedsource).sum() + nlensedregions)
-    
+
     for i in range(nmu):
         testfit = numpy.append(testfit, 0)
     tag = 'sandbox'
 
     print("lnprob: %f" %testlnprob)
-    print("Using the following model parameters:")    
+    print("Using the following model parameters:")
     for k, v in zip(paramSetup['pname'], testfit[1:-4]):
         print("%s : %.4f" %(k,v))
-    visualutil.plotFit(config, testfit, tag=tag, cleanup=cleanup,
+    visualutil.plotFit(config, testfit, threshold, tag=tag, cleanup=cleanup,
             interactive=interactive)
-        
+
 
 def lnprior(pzero_regions, paramSetup):
 
@@ -103,7 +111,7 @@ def lnprior(pzero_regions, paramSetup):
     return priorln, mu
 
 
-def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd, 
+def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
            fixindx, paramSetup, computeamp=True, miriad=False):
     """ Function that computes the Ln likelihood of the data"""
 
@@ -236,7 +244,7 @@ def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
         wgt = wgt[goodvis]
         chi2_all = wgt * diff_all * diff_all
     else:
-        model_complex = sample_vis.uvmodel(g_lensimage_all, headmod, 
+        model_complex = sample_vis.uvmodel(g_lensimage_all, headmod,
                 uuu, vvv, pcd)
         vis_complex -= model_complex
         diff_all = wgt * numpy.abs(vis_complex) ** 2
@@ -263,7 +271,7 @@ def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
     #chi2_real_all = (real - model_real) ** 2. / modvariance_real
     #chi2_imag_all = (imag - model_imag) ** 2. / modvariance_imag
     #chi2_all = numpy.append(chi2_real_all, chi2_imag_all)
-    
+
     # compute the sigma term
     #sigmaterm_real = numpy.log(2 * numpy.pi / wgt)
     #sigmaterm_imag = numpy.log(2 * numpy.pi * modvariance_imag)
@@ -292,7 +300,7 @@ def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
 
     return likeln, amp
 
-def lnprob(pzero_regions, vis_complex, wgt, uuu, vvv, pcd, 
+def lnprob(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
            fixindx, paramSetup, computeamp=True):
 
     """
@@ -308,11 +316,11 @@ def lnprob(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
         mu = 1
         return probln, mu
 
-    ll, mu = lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd, 
+    ll, mu = lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
            fixindx, paramSetup, computeamp=computeamp)
 
     normalization = 1.0#2 * real.size
     probln = lp * normalization + ll
     #print(probln, lp*normalization, ll)
-    
+
     return probln, mu

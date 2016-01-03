@@ -388,12 +388,17 @@ def makeVis(config, miriad=False, idtag=''):
         #    print(msg)
         #    raise TypeError
 
-def makeImage(config, interactive=True, miriad=False, idtag=''):
+def makeImage(config, threshold, interactive=True, miriad=False, idtag=''):
 
     """
 
     Make an image of the model and the residual from simulated model
     visibilities.  Requires CASA or miriad.
+
+    Parameters
+    ----------
+    threshold: float
+        in mJy, cleaning threshold
 
     """
 
@@ -409,21 +414,7 @@ def makeImage(config, interactive=True, miriad=False, idtag=''):
     imsize = [fitshead['NAXIS1'], fitshead['NAXIS2']]
     cell = str(fitshead['CDELT2'] * 3600) + 'arcsec'
 
-    # search for an existing mask
-    index = fitsim.find('.fits')
-    maskname = fitsim[0:index] + '.mask'
-    try:
-        maskcheck = os.path.exists(maskname)
-    except:
-        maskcheck = False
-
-    if maskcheck:
-        mask = maskname
-    else:
-        mask = ''
-
     # invert and clean the simulated model visibilities
-
     if miriad:
         try:
             # use miriad for imaging
@@ -533,7 +524,7 @@ def makeImage(config, interactive=True, miriad=False, idtag=''):
         # mask should be re-usable
         imloc = target + '_clean_model'
 #        os.system('rm -rf ' + imloc + '*')
-        for ext in ['.flux', '.image', '.model', 'pbcor', '.psf', '.residual', '.flux.pbcoverage']:
+        for ext in ['.flux', '.image', '.model', '.psf', '.residual']:
             rmtables(imloc + ext)
 
         # handle lists of visibility files
@@ -547,12 +538,26 @@ def makeImage(config, interactive=True, miriad=False, idtag=''):
             visname, visext = os.path.splitext(visfile)
             modelvisloc = visname + '_model_' + idtag + '.ms'
 
+        # search for an existing mask
+        maskname = imloc + '.mask'
+        try:
+            maskcheck = os.path.exists(maskname)
+        except:
+            maskcheck = False
+
+        if maskcheck:
+            mask = maskname
+        else:
+            mask = ''
+
+        threshold = str(threshold)
         # use CASA's clean task to make the images
+        print("")
         print("*** CLEANING with the following options: *** \n")
-        print("vis={:s}, imagename={:s}, mode='mfs', niters=10000, threshold='0.2mJy', interactive={:}, mask={:s},imsize={:s},cell={:s},weighting='briggs',robust=0.5").format(modelvisloc, imloc, interactive,mask, imsize, cell)
+        print("vis={:s}, imagename={:s}, mode='mfs', niters=10000, threshold={:s} mJy, interactive={:}, mask={:s}, imsize={:s},cell={:s},weighting='briggs',robust=0.5").format(modelvisloc, imloc+'.image', threshold,  interactive, mask, imsize, cell)
 
         clean(vis=modelvisloc, imagename=imloc, mode='mfs', niter=10000,
-            threshold='0.2mJy', interactive=interactive, mask=mask,
+            threshold=threshold+'mJy', interactive=interactive, mask=mask,
             imsize=imsize, cell=cell, weighting='briggs', robust=0.5)
 
         # export the cleaned image to a fits file
@@ -565,7 +570,7 @@ def makeImage(config, interactive=True, miriad=False, idtag=''):
         # remove any existing clean products, except for .mask
         imloc = target + '_clean_residual'
 #        os.system('rm -rf ' + imloc + '*')
-        for ext in ['.flux', '.image', '.model', 'pbcor', '.psf', '.residual', '.flux.pbcoverage']:
+        for ext in ['.flux', '.image', '.model', '.psf', '.residual']:
             rmtables(imloc + ext)
 
         # handle lists of visibility files
@@ -581,7 +586,7 @@ def makeImage(config, interactive=True, miriad=False, idtag=''):
 
         # use CASA's clean task to make the images
         clean(vis=modelvisloc, imagename=imloc, mode='mfs', niter=10000,
-            threshold='0.2mJy', interactive=interactive, mask=mask,
+            threshold=threshold+'mJy', interactive=interactive, mask=mask,
             imsize=imsize, cell=cell, weighting='briggs', robust=0.5)
 
         # export the cleaned image to a fits file
@@ -996,7 +1001,7 @@ def removeTempFiles():
     cmd = 'rm -rf *SBmap*fits *_model* *_residual* *output.txt'
     os.system(cmd)
 
-def plotFit(config, fitresult, tag='', cleanup=True, showOptical=False,
+def plotFit(config, fitresult, threshold, tag='', cleanup=True, showOptical=False,
         interactive=True):
 
     """
@@ -1004,7 +1009,10 @@ def plotFit(config, fitresult, tag='', cleanup=True, showOptical=False,
     Plot a particular model fit.
 
     Parameters
-    ------
+    ----------
+    threshold: float
+        in mJy, cleaning threshold
+
     showOptical: Bool
                  True: will plot data as contour, optical as grayscale
 
@@ -1029,7 +1037,7 @@ def plotFit(config, fitresult, tag='', cleanup=True, showOptical=False,
     makeVis(config, miriad=miriad, idtag=tag)
 
     # image the simulated visibilities
-    makeImage(config, miriad=miriad, interactive=interactive, idtag=tag)
+    makeImage(config, threshold, miriad=miriad, interactive=interactive, idtag=tag)
 
     # read in the images of the simulated visibilities
     objectname = config['ObjectName']
@@ -1066,6 +1074,12 @@ def preProcess(config, paramData, fitresult, tag='', cleanup=True,
 
     Cycle through each region and run plotFit, selecting parameters
     appropriately.
+
+    Parameters
+    ----------
+    threshold: float (need to implement)
+        in mJy, cleaning threshold
+
 
     """
 
@@ -1123,7 +1137,7 @@ def preProcess(config, paramData, fitresult, tag='', cleanup=True,
         npar = nparlens + nparsource + npar_previous
         parameters = allparameters[npar_previous:npar]
         npar_previous = npar
-        plotFit(config, paramData, parameters, regioni, tag=tag,
+        plotFit(config, paramData, threshold, parameters, regioni, tag=tag,
                 cleanup=cleanup, showOptical=showOptical,
                 interactive=interactive)
 

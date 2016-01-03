@@ -218,7 +218,7 @@ def printFitParam(fitresult, fitKeys, mag=False):
 
 
 def bestFit(bestfitloc='posteriorpdf.fits', showOptical=False, cleanup=True,
-        interactive=True):
+        interactive=True, threshold=1.2):
 
     """
 
@@ -226,6 +226,11 @@ def bestFit(bestfitloc='posteriorpdf.fits', showOptical=False, cleanup=True,
     model and compare to the data.  Also plot the residuals obtained after
     subtracting the best-fit model from the data and compare to the data.
     Optionally plot the best available optical image and compare to the data.
+
+    Parameters
+    ----------
+    threshold: float
+        in mJy, cleaning threshold
 
     """
 
@@ -244,12 +249,12 @@ def bestFit(bestfitloc='posteriorpdf.fits', showOptical=False, cleanup=True,
     tag = 'bestfit'
 
     printFitParam(bestfit, fitKeys)
-    visualutil.plotFit(config, bestfit, tag=tag, cleanup=cleanup,
+    visualutil.plotFit(config, bestfit, threshold, tag=tag, cleanup=cleanup,
             showOptical=showOptical, interactive=interactive)
 
 
 def goodFits(bestfitloc='posteriorpdf.fits', Nfits=12, Ngood=5000,
-        cleanup=True, interactive=True, showOptical=False):
+        cleanup=True, interactive=True, showOptical=False, threshold=1.2):
 
     """
 
@@ -257,6 +262,12 @@ def goodFits(bestfitloc='posteriorpdf.fits', Nfits=12, Ngood=5000,
     at random.  Plot the model from each realization and compare to the data.
     Also plot the residuals obtained after subtracting the model from the data
     and compare to the data.  By default: Nfits = 12, Ngood=5000.
+
+    Parameters
+    ----------
+    threshold: float
+        in mJy, cleaning threshold
+
 
     """
 
@@ -283,5 +294,5 @@ def goodFits(bestfitloc='posteriorpdf.fits', Nfits=12, Ngood=5000,
         fitresult = fitresults[realid]
         tag = 'goodfit' + str(realid).zfill(4)
         printFitParam(fitresult, fitKeys)
-        visualutil.plotFit(config, fitresult, tag=tag, showOptical=showOptical,
+        visualutil.plotFit(config, fitresult, threshold, tag=tag, showOptical=showOptical,
                 cleanup=cleanup, interactive=interactive)

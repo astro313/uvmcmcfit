@@ -856,12 +856,12 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
             linestyles=pcline, linewidths=1.5)
     plt.contour(cmodx, cmody, datacut, colors=ncolor, levels=nlevs, \
             linestyles=ncline, linewidths=1.5)
-
     # plot the critical curve
     #plt.contour(cmodx, cmody, dmu, colors='orange', levels=[100])
+
     caustics = True
     if caustics:
-        # Keeton 00
+        # Keeton 00, Kormann+94
         phi = numpy.linspace(0.0, 2*numpy.pi, 2000)
 
         def cart2pol(x, y):
@@ -902,10 +902,10 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
                 # if not circular
                 if q != 1.0:
                     # radial caustic
-                    x = (b * numpy.sqrt(q)/qq) * numpy.arcsinh(numpy.cos(phi)*qq/q)
-                    y = (-b * numpy.sqrt(q)/qq) * numpy.arcsin(numpy.sin(phi)*qq/q)
+                    x = (-b * numpy.sqrt(q)/qq) * numpy.arcsinh(numpy.cos(phi)*qq/q)
+                    y = (b * numpy.sqrt(q)/qq) * numpy.arcsin(numpy.sin(phi)*qq)
 
-                    # tangential
+                    # tangential, Kormann+94 eqn 31
                     xt = b * (((numpy.sqrt(q)/Delta) * numpy.cos(phi)) - ((numpy.sqrt(q)/qq)*numpy.arcsinh(qq/q * numpy.cos(phi))))
 
                     yt = -b * (((numpy.sqrt(q)/Delta) * numpy.sin(phi)) - ((numpy.sqrt(q)/qq) * numpy.arcsin(qq * numpy.sin(phi))))

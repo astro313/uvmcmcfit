@@ -884,20 +884,14 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
             region = 'Region' + str(ireg)
             # loop through each lens
             for jlens in range(nlens):
-                lens = 'Lens' + str(jlens)
-                sp = ' '
-                qStr = sp.join((region, lens, 'AxialRatio'))
-                bStr = sp.join((region, lens, 'EinsteinRadius'))
-                paStr = sp.join((region, lens, 'PositionAngle'))
-                xxLensStr = sp.join((region, lens, 'DeltaRA'))
-                yyLensStr = sp.join((region, lens, 'DeltaDec'))
-                xxLens = fitresultDict[xxLensStr]
-                yyLens = fitresultDict[yyLensStr]
-                PA = fitresultDict[paStr]
+                i5 = jlens * 5
+                xxLens = parameters[i5 + 1]
+                yyLens = parameters[i5 + 2]
+                PA = parameters[i5 + 4]
                 PA = 180 - PA               # RA increasing to the left (E is to the left of N)
-                q = fitresultDict[qStr]
+                q = parameters[i5 + 3]
                 qq = numpy.sqrt(1 - q**2)
-                b = fitresultDict[bStr]     # in arcsec
+                b = parameters[i5]   # in arcsec
                 Delta = numpy.sqrt(numpy.cos(phi)**2 + q**2 * numpy.sin(phi)**2)
                 # if not circular
                 if q != 1.0:

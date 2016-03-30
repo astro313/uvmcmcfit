@@ -624,7 +624,7 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
 
     fig = plt.figure(figsize=(5.0, 5.0))
     ax = fig.add_subplot(1, 1, 1)
-    plt.subplots_adjust(left=0.14, right=0.97, top=0.97,
+    plt.subplots_adjust(left=0.17, right=0.93, top=0.97,
             bottom=0.11, wspace=0.35)
     paramData = setuputil.loadParams(config)
     nlensedsource = paramData['nlensedsource']
@@ -941,8 +941,8 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
     plt.tick_params(width=1.5, which='both')
     plt.tick_params(length=4, which='minor')
     plt.tick_params(length=8, which='major')
-    plt.xlabel(r'$\Delta$RA (arcsec)', fontsize='xx-large')
-    plt.ylabel(r'$\Delta$Dec (arcsec)', fontsize='xx-large')
+    plt.xlabel(r'$\Delta$RA (arcsec)', fontsize='x-large')
+    plt.ylabel(r'$\Delta$Dec (arcsec)', fontsize='x-large')
 
     bparad = bpa / 180 * numpy.pi
     beamx = numpy.abs(numpy.sin(bparad) * bmaj) + \
@@ -981,10 +981,13 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
         plt.text(0.08, 0.88, shortname, transform=ax.transAxes,
                 fontsize='xx-large')
     except:
-        pass
+        objname = config['ObjectName']
+        plt.text(0.08, 0.88, objname, transform=ax.transAxes,
+                fontsize='xx-large')
+
     bigtag = '.' + modeltype + '.' + tag
 
-    savefig('LensedSBmap' + bigtag + '.pdf')
+    savefig('LensedSBmap' + bigtag + '.png')
     #plt.clf()
 
 def removeTempFiles():

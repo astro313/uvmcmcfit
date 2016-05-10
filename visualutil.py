@@ -52,7 +52,7 @@ def plotPDF(fitresults, tag, limits='', Ngood=5000, axes='auto'):
             nbins = totalwidth / rmsval * 5
             ax = plt.subplot(nrow, ncol, j)
             j += 1
-            plt.hist(frg, nbins, edgecolor='blue')
+            plt.hist(frg, int(nbins), edgecolor='blue')
             plt.ylabel('N')
             plt.xlabel(pname)
             if axes == 'auto':

@@ -28,30 +28,28 @@ def plotPDF(fitresults, tag, limits='', Ngood=5000, axes='auto'):
     # determine dimensions of PDF plots
     nparams = len(fitresultsgood[0])
     ncol = 4
-    nrow = nparams / ncol + 1
-    j = 1
+    nrow = (nparams/ncol + 1) if nparams % ncol != 0 else nparams/ncol
 
-    plt.figure(figsize=(12.0, 1.5 * nrow))
+    plt.figure(figsize=(12.0, 2.0 * nrow))
 
     # set up the plotting window
     plt.subplots_adjust(left=0.08, bottom=0.15, right=0.95, top=0.95,
         wspace=0.4, hspace=0.65)
 
     pnames = fitresultsgood.names
+    width = 1e-6
 
-    counter = 0
-    for pname in pnames:
+    for i, pname in enumerate(pnames):
+        ax = plt.subplot(nrow, ncol, i+1)     # nparams/ncol
 
-        # Position of primary lens
         frg = fitresultsgood[pname]
         rmsval = numpy.std(frg)
-        if rmsval > 1e-6:
+        if rmsval > width:
             avgval = numpy.mean(frg)
             print(pname + ' = ' + str(avgval) + ' +/- ' + str(rmsval))
             totalwidth = frg.max() - frg.min()
             nbins = totalwidth / rmsval * 5
-            ax = plt.subplot(nrow, ncol, j)
-            j += 1
+
             plt.hist(frg, int(nbins), edgecolor='blue')
             plt.ylabel('N')
             plt.xlabel(pname)
@@ -72,16 +70,19 @@ def plotPDF(fitresults, tag, limits='', Ngood=5000, axes='auto'):
                 else:
                     p_l = limits[0]
                     p_u = limits[1]
-                    xmin = p_l[counter]
-                    xmax = p_u[counter]
-                    counter += 1
+                    xmin = p_l[i]
+                    xmax = p_u[i]
                 ymin = oldaxis[2]
                 ymax = oldaxis[3]
                 plt.axis([xmin, xmax, ymin, ymax])
-
+        else:
+            print('*** Distribution narrorwer than {} ***').format(width)
+            print('*** This is likely a fixed parameter: {}. ***').format(pname)
+            print('*** Check config.yaml *** ')
 
     savefile = tag + 'PDFs.png'
     savefig(savefile)
+
 
 def makeSBmap(config, fitresult):
 

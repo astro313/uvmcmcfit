@@ -270,11 +270,6 @@ def quality(bestfitloc='posteriorpdf.fits', Ngood=5000):
     Ad-hoc way to compare models of different setup, should really be likelihood ratio * Ockham factor.
     Treat chi2 as -2 * lnprob.
 
-
-
-    Return
-    ------
-
     '''
 
     import modifypdf
@@ -294,7 +289,13 @@ def quality(bestfitloc='posteriorpdf.fits', Ngood=5000):
     import uvutil
     visfileloc = config['UVData']
     data_complex, data_wgt = uvutil.visload(visfileloc)
-    nvis = len(data_complex)*3
+    npos = len(data_complex)*3
+    print("total number of vis: {}".format(npos))
+
+    npos_rmflagged = len(data_complex[data_wgt > 0])*3
+    print("number of vis after removing data with negative or zero weights: {}".format(npos_rmflagged))
+
+    nvis = np.min([npos, npos_rmflagged])
 
     from astropy.table import Table
     fitKeys = Table.read(bestfitloc).keys()

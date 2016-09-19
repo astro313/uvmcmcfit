@@ -51,12 +51,12 @@
  surface brightness maps.
 
  - interferometric visibilities for every combination of array configuration,
- sideband, and date observed that you want to model.  
+ sideband, and date observed that you want to model.
 
  3. More info about the constraints and priors input files.
 
  - Lenses: The lenses are assumed to have singular isothermal ellipsoid
- profiles.  
+ profiles.
 
  - Sources: Sources are represented by Gaussian profiles.
 
@@ -135,7 +135,7 @@ def lnprior(pzero_regions, paramSetup):
     return priorln, mu
 
 
-def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd, 
+def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
            fixindx, paramSetup, computeamp=True):
     """ Function that computes the Ln likelihood of the data"""
 
@@ -262,7 +262,7 @@ def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
         wgt = wgt[goodvis]
         chi2_all = wgt * diff_all * diff_all
     else:
-        model_complex = sample_vis.uvmodel(g_lensimage_all, headmod, 
+        model_complex = sample_vis.uvmodel(g_lensimage_all, headmod,
                 uuu, vvv, pcd)
         diff_all = numpy.abs(vis_complex - model_complex)
         chi2_all = wgt * diff_all * diff_all
@@ -287,7 +287,7 @@ def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
     #chi2_real_all = (real - model_real) ** 2. / modvariance_real
     #chi2_imag_all = (imag - model_imag) ** 2. / modvariance_imag
     #chi2_all = numpy.append(chi2_real_all, chi2_imag_all)
-    
+
     # compute the sigma term
     #sigmaterm_real = numpy.log(2 * numpy.pi / wgt)
     #sigmaterm_imag = numpy.log(2 * numpy.pi * modvariance_imag)
@@ -316,7 +316,7 @@ def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
 
     return likeln, amp
 
-def lnprob(pzero_regions, vis_complex, wgt, uuu, vvv, pcd, 
+def lnprob(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
            fixindx, paramSetup, computeamp=True):
 
     """
@@ -332,13 +332,13 @@ def lnprob(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
         mu = 1
         return probln, mu
 
-    ll, mu = lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd, 
+    ll, mu = lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
            fixindx, paramSetup, computeamp=computeamp)
 
     normalization = 1.0#2 * real.size
     probln = lp * normalization + ll
     #print(probln, lp*normalization, ll)
-    
+
     return probln, mu
 
 configloc = 'config.yaml'
@@ -520,14 +520,14 @@ if not realpdf:
             nsource = nsource_regions[regioni]
             for i in range(nsource):
                 si = '.Source' + str(i) + '.Region' + ri
-                extendedpname.append('mu_tot' + si) 
+                extendedpname.append('mu_tot' + si)
                 nmu += 1
             for i in range(nsource):
                 si = '.Source' + str(i) + '.Region' + ri
-                extendedpname.append('mu_aper' + si) 
+                extendedpname.append('mu_aper' + si)
                 nmu += 1
             extendedpname.append('mu_tot.Region' + ri)
-            extendedpname.append('mu_aper.Region' + ri) 
+            extendedpname.append('mu_aper.Region' + ri)
             nmu += 2
     posteriordat = Table(names = extendedpname)
     pzero = numpy.array(paramSetup['pzero'])
@@ -561,14 +561,14 @@ else:
 #os.system('date')
 currenttime = time.time()
 
-# pos is the position of the sampler
-# prob the Ln probability
+# pos - A list of the current positions of the walkers in the parameter space. The shape of this object will be (nwalkers, dim)
+# prob - The list of log posterior probabilities for the walkers at positions given by pos . The shape of this object is (nwalkers, dim).
 # state the random number generator state
 # amp the metadata 'blobs' associated with the current positoni
 for pos, prob, state, amp in sampler.sample(pzero, iterations=10000):
 
     print("Mean acceptance fraction: {:f}".
-            format(numpy.mean(sampler.acceptance_fraction)), 
+            format(numpy.mean(sampler.acceptance_fraction)),
             "\nMean lnprob and Max lnprob values: {:f} {:f}".
             format(numpy.mean(prob), numpy.max(prob)),
             "\nTime to run previous set of walkers (seconds): {:f}".

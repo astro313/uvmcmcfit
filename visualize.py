@@ -265,6 +265,47 @@ def walker(bestfitloc='posteriorpdf.fits', Ngood=5000):
     return None
 
 
+def quality(bestfitloc='posteriorpdf.fits', Ngood=5000):
+    '''
+    Ad-hoc way to compare models of different setup, should really be likelihood ratio * Ockham factor.
+    Treat chi2 as -2 * lnprob.
+
+
+
+    Return
+    ------
+
+    '''
+
+    import modifypdf
+    from astropy.io import fits
+    import numpy as np
+
+    print("Reading output from posteriorpdf.fits")
+    fitresults = fits.getdata(bestfitloc)
+
+    # grab the last Ngood fits
+    fitresults = fitresults[-Ngood:]
+    # identify the good fits
+    fitresultsgood = modifypdf.prune(fitresults)
+
+    lnprob_med = np.median(fitresultsgood['lnprob'])
+
+    import uvutil
+    visfileloc = config['UVData']
+    data_complex, data_wgt = uvutil.visload(visfileloc)
+    nvis = len(data_complex)*3
+
+    from astropy.table import Table
+    fitKeys = Table.read(bestfitloc).keys()
+    nparams = len(fitKeys)
+
+    DOF = nvis - nparams
+
+    print("median lnprob/DOF: {}".format(lnprob_med/DOF))
+#     return lnprob_med/DOF
+
+
 def posteriorPDF(bestfitloc='posteriorpdf.fits'):
 
     """
@@ -278,7 +319,6 @@ def posteriorPDF(bestfitloc='posteriorpdf.fits'):
     fitresults = fits.getdata(bestfitloc)
     tag = 'posterior'
     visualutil.plotPDF(fitresults, tag, Ngood=5000, axes='auto')
-
 
 def evolvePDF(bestfitloc='posteriorpdf.fits', stepsize=50000):
 

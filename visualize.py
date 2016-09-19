@@ -67,10 +67,60 @@ def convergence(bestfitloc='posteriorpdf.fits'):
     outfile = 'convergence'
     savefig(outfile)
 
+    try:
+        import plotutils.autocorr as ac
+        import plotutils.plotutils as pu
+
+        from astropy.table import Table
+        fitKeys = Table.read(bestfitloc).keys()
+
+        nwalkers = config['Nwalkers']
+        nsteps = len(pdf)/nwalkers
+        ndim = len(fitKeys)
+        assert isinstance(nsteps, int), 'the total number of sameples should be nsteps x nwalkers'
+
+        chains = numpy.empty([nwalkers, nsteps, ndim])
+        for ii, param in enumerate(fitKeys):
+            these_chains = pdf[param]
+            # first reshape chains in posteriorpdf.fits to
+            # extract info for each walker, because
+            # chains are flattened before saving.
+            # currently each walker of the same iteration
+            # are followed row by row.
+            # hopefully this will work, assuming the order of the walkers
+            # doesn't change in each iteration
+            for i in range(nwalkers):
+                chains[i, :, ii] = these_chains[ii::nwalkers]
+
+        # If you leave off mean=False, then the function first averages the locations of all the walkers together, and plots the motion of this centroid over the course of the run
+        pu.plot_emcee_chains(chains, mean=False)
+        savefig('trace')
+
+        # should fall off to zero after some time
+        plt.clf()
+        ac.plot_emcee_chain_autocorrelation_functions(chains)
+        savefig('ACF')
+
+        # calc ACF: about the # steps needed for these AC to die off
+        print("ACF: {}".format(ac.emcee_chain_autocorrelation_lengths(chains)))
+
+        # remove correlated samples
+        thin_chain = ac.emcee_thinned_chain(chains)
+        try:
+            print(thin_chain.shape)
+        except AttributeError:
+            print("Oh no... cannot find uncorrelated sample..")
+    except ImportError:
+        pass
+
 
 def walker(bestfitloc='posteriorpdf.fits', Ngood=5000):
     """
     Plot traces for chains. Modifed from Adrian Price-Whelan's code.
+
+    - visual analysis using trace plots
+    - must be produced for all parameters, not just those of interest
+    - if reached stationary: mean and variance of the trace should be relatively constant
 
     """
 
@@ -228,6 +278,7 @@ def posteriorPDF(bestfitloc='posteriorpdf.fits'):
     fitresults = fits.getdata(bestfitloc)
     tag = 'posterior'
     visualutil.plotPDF(fitresults, tag, Ngood=5000, axes='auto')
+
 
 def evolvePDF(bestfitloc='posteriorpdf.fits', stepsize=50000):
 

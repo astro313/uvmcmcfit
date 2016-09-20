@@ -30,6 +30,60 @@ configloc = 'config.yaml'
 configfile = open(configloc)
 config = yaml.load(configfile)
 
+
+def check_chain(chainFile='chain.pkl'):
+    '''
+
+    Parameters
+    ----------
+    chainFile: str
+        pickle file containing unflattened chain in shape (nwalkers, nsteps, nparams)
+
+    Returns
+    -------
+    thin_chain: array
+        chain after removing correlated samples
+
+    '''
+
+    try:
+        import plotutils.autocorr as ac
+        import plotutils.plotutils as pu
+    except ImportError:
+        print("Please install plotutils and re-run this function.")
+    import matplotlib.pyplot as plt
+    import cPickle as pickle
+
+    import os.path
+    if not os.path.exists(chainFile):
+        raise IOError(chainFile+" does not exist.")
+    with open(chainFile) as f:
+        chain = pickle.load(f)
+
+    walkers, steps, dim = chain.shape  
+
+    # If you leave off mean=False, then the function first averages the locations of all the walkers together, and plots the motion of this centroid over the course of the run
+    pu.plot_emcee_chains(chain, mean=False)
+    plt.savefig('trace_unflattened_chain')
+
+    # should fall off to zero after some time
+    plt.clf()
+    ac.plot_emcee_chain_autocorrelation_functions(chain)
+    plt.savefig('ACF_unflattened_chain')
+
+    # calc ACF: about the # steps needed for these AC to die off
+    print("AC time for each parameters from emcee: {} ".format(sampler.get_autocorr_time()))
+    print("ACF: {}".format(ac.emcee_chain_autocorrelation_lengths(chain)))
+
+    # remove correlated samples
+    thin_chain = ac.emcee_thinned_chain(chain)
+    try:
+        print(thin_chain.shape)
+        return thin_chain
+    except AttributeError:
+        print("Oh no... cannot find uncorrelated sample..")
+
+
 def convergence(bestfitloc='posteriorpdf.fits'):
 
     """

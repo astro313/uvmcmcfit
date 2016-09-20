@@ -24,6 +24,8 @@ import visualutil
 #sys.path.append(cwd)
 #import config
 import yaml
+import cPickle as pickle
+
 
 
 configloc = 'config.yaml'
@@ -52,7 +54,6 @@ def check_and_thin_chain(chainFile='chain.pkl'):
     except ImportError:
         print("Please install plotutils and re-run this function.")
     import matplotlib.pyplot as plt
-    import cPickle as pickle
 
     import os.path
     if not os.path.exists(chainFile):
@@ -122,60 +123,26 @@ def convergence(bestfitloc='posteriorpdf.fits'):
     outfile = 'convergence'
     savefig(outfile)
 
-    try:
-        import plotutils.autocorr as ac
-        import plotutils.plotutils as pu
 
-        from astropy.table import Table
-        fitKeys = Table.read(bestfitloc).keys()
-
-        nwalkers = config['Nwalkers']
-        nsteps = len(pdf)/nwalkers
-        ndim = len(fitKeys)
-        assert isinstance(nsteps, int), 'the total number of sameples should be nsteps x nwalkers'
-
-        chains = numpy.empty([nwalkers, nsteps, ndim])
-        for ii, param in enumerate(fitKeys):
-            these_chains = pdf[param]
-            # first reshape chains in posteriorpdf.fits to
-            # extract info for each walker, because
-            # chains are flattened before saving.
-            # currently each walker of the same iteration
-            # are followed row by row.
-            # hopefully this will work, assuming the order of the walkers
-            # doesn't change in each iteration
-            for i in range(nwalkers):
-                chains[i, :, ii] = these_chains[ii::nwalkers]
-
-        # If you leave off mean=False, then the function first averages the locations of all the walkers together, and plots the motion of this centroid over the course of the run
-        pu.plot_emcee_chains(chains, mean=False)
-        savefig('trace')
-
-        # should fall off to zero after some time
-        plt.clf()
-        ac.plot_emcee_chain_autocorrelation_functions(chains)
-        savefig('ACF')
-
-        # calc ACF: about the # steps needed for these AC to die off
-        print("ACF: {}".format(ac.emcee_chain_autocorrelation_lengths(chains)))
-
-        # remove correlated samples
-        thin_chain = ac.emcee_thinned_chain(chains)
-        try:
-            print(thin_chain.shape)
-        except AttributeError:
-            print("Oh no... cannot find uncorrelated sample..")
-    except ImportError:
-        pass
-
-
-def walker(bestfitloc='posteriorpdf.fits', Ngood=5000):
+def walker(chainFile='chain.pkl', converged_idx=150):
     """
-    Plot traces for chains. Modifed from Adrian Price-Whelan's code.
+    Plot traces for flattened chains. Modifed from Adrian Price-Whelan's code.
+    For each parameter, plot each walker on left, and a histogram from all walkers past converged_idx steps
 
+    Test convergence:
     - visual analysis using trace plots
     - must be produced for all parameters, not just those of interest
     - if reached stationary: mean and variance of the trace should be relatively constant
+
+
+    Parameters
+    ----------
+    chainFile: str
+        should be consistent with uvmcmcfit.py
+
+    converged_idx: ind
+        index of iteration steps --> threshold for plotting posterior.
+        if plotutils is installed, the input won't matter
 
     """
 
@@ -188,14 +155,19 @@ def walker(bestfitloc='posteriorpdf.fits', Ngood=5000):
     font_color = "#dddddd"
     tick_color = "#cdcdcd"
 
-    fitresults = fits.getdata(bestfitloc)
+    # get parameter names
+    import setuputil
+    paramSetup = setuputil.loadParams(config)
+    pnames = paramSetup['panme']
 
-    nwalkers = config['Nwalkers']
-    nsteps = len(fitresults)/nwalkers
-    assert isinstance(nsteps, int), 'the total number of sameples should be nsteps x nwalkers'
+    with open(chainFile) as f:
+        chain = pickle.load(f)
 
-    from astropy.table import Table
-    fitKeys = Table.read(bestfitloc).keys()
+    try:
+        import plotutils.autocorr as ac
+        converged_idx = 5 * ac.emcee_chain_autocorrelation_lengths(chain)
+    except:
+        pass
 
     import matplotlib.gridspec as gridspec
     from matplotlib.backends.backend_pdf import PdfPages
@@ -206,11 +178,12 @@ def walker(bestfitloc='posteriorpdf.fits', Ngood=5000):
     with PdfPages('walkers.pdf') as pdf:
 
         numPanel = 5   # save plots for 5 parameters on each page
+
         # For each parameter, plot each walker on left panel, and a histogram
-        # of all links from all walkers past prune_idx steps
-        for ii, param in enumerate(fitKeys):
+        # of all links from all walkers past converged_idx steps
+        for ii, param in enumerate(pnames):
             # print(" plotting for {:} in panel {:}".format(param, ii % numPanel))
-            these_chains = fitresults[param]
+            these_chains = chain[:, :, ii]
 
             if ii % numPanel == 0:
                 fig = plt.figure(figsize=(16, 20.6))
@@ -218,28 +191,12 @@ def walker(bestfitloc='posteriorpdf.fits', Ngood=5000):
                 gs = gridspec.GridSpec(numPanel, 3)
                 counter_gs = 0
 
-            # 5000 is the value we ways use for Ngood sample
-            # plot the last total 5000 steps of all walkers
-            prune_idx = (len(fitresults) - Ngood)/nwalkers
-            # first reshape chains in posteriorpdf.fits to
-            # extract info for each walker, because
-            # chains are flattened before saving.
-            # currently each walker of the same iteration
-            # are followed row by row.
-            # hopefully this will work, assuming the order of the walkers
-            # doesn't change in each iteration
-            chains = np.empty([nwalkers, nsteps])
-            # for ll in np.arange(nsteps):
-            #      for jj, samp in enumerate(these_chains):
-            #         chains[jj%nwalkers, ll] = samp
-            for i in range(nwalkers):
-                chains[i, :] = these_chains[ii::nwalkers]
-            # color walkers by their variance past prune_idx
+            # color walkers by their variance past converged_idx
             # so here, compute the maximum variance to scale the others to 0-1
-            max_var = max(np.var(chains[:, prune_idx:], axis=1))
+            max_var = max(np.var(these_chains[:, converged_idx:], axis=1))
 
             totalwidth = these_chains.max() - these_chains.min()
-            rms = np.std(these_chains[-Ngood:])
+            rms = np.std(these_chains[converged_idx:])
             nbins = totalwidth/rms
 
             ax1 = plt.subplot(gs[counter_gs, :2])
@@ -248,13 +205,13 @@ def walker(bestfitloc='posteriorpdf.fits', Ngood=5000):
                         color="#67A9CF",
                         alpha=0.7,
                         linewidth=2)
-            for walker in chains:
-                ax1.plot(np.arange(len(walker))-prune_idx, walker,
+            for walker in these_chains:
+                ax1.plot(np.arange(len(walker))-converged_idx, walker,
                          drawstyle="steps",
-                         color=cm.bone_r(np.var(walker[prune_idx:]) / max_var),
+                         color=cm.bone_r(np.var(walker[converged_idx:]) / max_var),
                          alpha=0.5)
             ax1.set_ylabel(param,
-                           fontsize=22,
+                           fontsize=16,
                            labelpad=18,
                            rotation="horizontal",
                            color=font_color)
@@ -262,7 +219,7 @@ def walker(bestfitloc='posteriorpdf.fits', Ngood=5000):
             ax1.yaxis.set_ticks([])
             # For the last plot on the bottom, add x-axis label.
             # Hide all others
-            if counter_gs == numPanel - 1 or ii == len(fitKeys) - 1:
+            if counter_gs == numPanel - 1 or ii == len(pnames) - 1:
                 ax1.set_xlabel("step number", fontsize=24,
                                labelpad=18, color=font_color)
             else:
@@ -271,16 +228,16 @@ def walker(bestfitloc='posteriorpdf.fits', Ngood=5000):
             # histograms
             ax2 = plt.subplot(gs[counter_gs, 2])
             ax2.set_axis_bgcolor("#555555")
-            # Create a histogram of all values past prune_idx. Make 100 bins
-            #   between the y-axis bounds defined by the 'walkers' plot.
-            ax2.hist(np.ravel(chains[:, prune_idx:]),
+            # Create a histogram of all values past converged_idx.
+            # Make nbins between the y-axis bounds defined by the 'walkers' plot.
+            ax2.hist(np.ravel(these_chains[:, converged_idx:]),
                      bins=int(np.min([nbins, 35])),
                      orientation='horizontal',
                      facecolor="#67A9CF",
                      edgecolor="none")
 
             # Same y-bounds as the walkers plot, so they line up
-            ax1.set_ylim(np.min(chains[:, :]), np.max(chains[:, :]))
+            ax1.set_ylim(np.min(these_chains[:, :]), np.max(these_chains[:, :]))
             ax2.set_ylim(ax1.get_ylim())
             ax2.xaxis.set_visible(False)
             ax2.yaxis.tick_right()
@@ -295,7 +252,7 @@ def walker(bestfitloc='posteriorpdf.fits', Ngood=5000):
                                fontsize=20,
                                rotation="horizontal",
                                color=font_color,
-                               labelpad=16)
+                               labelpad=20)
             ax2.yaxis.set_label_position("right")
             # Adjust axis ticks, e.g. make them appear
             # outside of the plots and change the padding / color.
@@ -307,13 +264,11 @@ def walker(bestfitloc='posteriorpdf.fits', Ngood=5000):
             ax1.get_xaxis().tick_bottom()
             # this removed the first and last tick labels
             # so I can squash the plots right up against each other
-            if param == "phi":
-                ax2.set_yticks(ax2.get_yticks()[1:-2])
-            else:
-                ax2.set_yticks(ax2.get_yticks()[1:-1])
+            ax2.set_yticks(ax2.get_yticks()[1:-1])
+
             fig.subplots_adjust(hspace=0.0, wspace=0.0, bottom=0.075,
                                 top=0.95, left=0.12, right=0.88)
-            if counter_gs == numPanel - 1 or ii == len(fitKeys) - 1:
+            if counter_gs == numPanel - 1 or ii == len(pnames) - 1:
                 pdf.savefig(fig, facecolor='#222222')
                 plt.close()
             counter_gs += 1

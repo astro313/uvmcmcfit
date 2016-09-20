@@ -1,6 +1,6 @@
 """
 
-Created by Shane Bussmann
+Authors: Shane Bussmann & Daisy Leung
 
 A number of visualization tools are included here to aid the user in evaluating
 the:
@@ -31,7 +31,7 @@ configfile = open(configloc)
 config = yaml.load(configfile)
 
 
-def check_chain(chainFile='chain.pkl'):
+def check_and_thin_chain(chainFile='chain.pkl'):
     '''
 
     Parameters
@@ -60,7 +60,7 @@ def check_chain(chainFile='chain.pkl'):
     with open(chainFile) as f:
         chain = pickle.load(f)
 
-    walkers, steps, dim = chain.shape  
+    walkers, steps, dim = chain.shape
 
     # If you leave off mean=False, then the function first averages the locations of all the walkers together, and plots the motion of this centroid over the course of the run
     pu.plot_emcee_chains(chain, mean=False)
@@ -72,13 +72,14 @@ def check_chain(chainFile='chain.pkl'):
     plt.savefig('ACF_unflattened_chain')
 
     # calc ACF: about the # steps needed for these AC to die off
-    print("AC time for each parameters from emcee: {} ".format(sampler.get_autocorr_time()))
-    print("ACF: {}".format(ac.emcee_chain_autocorrelation_lengths(chain)))
+    print("Auto-correlation of each parameters: {}".format(ac.emcee_chain_autocorrelation_lengths(chain)))
+    print("Iterations carried out: {:d}".format(steps))
+    print("Should have many more iterations than ACF for all parameters.\n")
 
     # remove correlated samples
     thin_chain = ac.emcee_thinned_chain(chain)
     try:
-        print(thin_chain.shape)
+        print("Number of iterations after thinning: {}".format(thin_chain.shape[1]))
         return thin_chain
     except AttributeError:
         print("Oh no... cannot find uncorrelated sample..")

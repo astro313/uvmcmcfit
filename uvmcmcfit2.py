@@ -3,10 +3,10 @@
  Author: T. K. Daisy Leung
 
 
- Note: similar to uvmcmcfit.py, but here we edited it to through out a pre-defined number of burn-in samples; 
- save the unflattened chain as a separate file; and acceptance_fraction + autocorrelation stuff as a separate file
+ Note: similar to uvmcmcfit.py, but here we edited it to throw out a pre-defined number of burn-in samples;
+ save the unflattened chain as a separate file; and acceptance_fraction + misc stuff as a separate file
 
- Last modified: 2016 Sept 19
+ Last modified: 2016 Sept 20
 
  Note: This is experimental software that is in a very active stage of
  development.  If you are interested in using this for your research, please
@@ -72,8 +72,7 @@
 
  "chains.pkl": contains unflatten chains for diagnostic purposes
 
- "summary.txt": contains mean acceptance fraction & auto correlation length for each parameters 
-                after each step (future: probably just compute ACF once after fully sampled)
+ "summary.txt": contains mean acceptance fraction
 
 """
 
@@ -575,7 +574,7 @@ currenttime = time.time()
 # But, it's difficult to judge how many steps is needed
 # need to may sure later that we are sampling longer than the AC time
 if not realpdf:
-    burnin = 500
+    burnin = 150
     print("*** Running Burn in phase of steps {:d} ***".format(burnin))
     try:
         pos0, lnprob0, rstate0 = sampler.run_mcmc(pzero, burnin)
@@ -592,16 +591,15 @@ import os
 # prob - The list of log posterior probabilities for the walkers at positions given by pos . The shape of this object is (nwalkers, dim).
 # state the random number generator state
 # amp the metadata 'blobs' associated with the current positoni
-niter = 10
+niter = 10000
 for pos, prob, state, amp in sampler.sample(pos0, iterations=niter):
 
-    walkers, steps, dim = sampler.chain.shape  
+    walkers, steps, dim = sampler.chain.shape
     result = [
 #            "Walkers: {:d}".format(walkers),
 #            "Steps:   {:d}".format(steps),
             "Mean Acceptance fraction across all walkers of this iteration: {:.2f}".format(numpy.mean(sampler.acceptance_fraction)),
             "Mean lnprob and Max lnprob values: {:f} {:f}".format(numpy.mean(prob), numpy.max(prob)),
-            "An estimate of the auto correlation time for each parameter: {}".format(sampler.get_autocorr_time()),
             "Time to run previous set of walkers (seconds): {:f}".format(time.time() - currenttime)
             ]
     print('\n'.join(result))
@@ -623,11 +621,10 @@ for pos, prob, state, amp in sampler.sample(pos0, iterations=niter):
     #posteriordat.write('posteriorpdf.txt', format='ascii')
 
 
-    # sometimes, we interupt the sampling before it goes through all the iteractions to check for 
+    # sometimes, we interupt the sampling before it goes through all the iteractions to check for
     # convergence.
     # Here, only store and append sampler.chains that if the row is non-zero, i.e. has been sampled
-    cc = sampler.chain[:, numpy.all(sampler.chain[0,:,:] != 0, axis=1), :]   
-    import pdb; pdb.set_trace()
+    cc = sampler.chain[:, numpy.all(sampler.chain[0,:,:] != 0, axis=1), :]
 
     if os.path.exists('chain.pkl'):
         with open('chain.pkl', 'rb') as f:
@@ -639,4 +636,3 @@ for pos, prob, state, amp in sampler.sample(pos0, iterations=niter):
         with open('chain.pkl', 'wb') as f:
             pickle.dump(cc, f, -1)
     del cc
-    

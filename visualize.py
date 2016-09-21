@@ -26,8 +26,6 @@ import visualutil
 import yaml
 import cPickle as pickle
 
-
-
 configloc = 'config.yaml'
 configfile = open(configloc)
 config = yaml.load(configfile)
@@ -127,7 +125,7 @@ def convergence(bestfitloc='posteriorpdf.fits'):
 def walker(chainFile='chain.pkl', converged_idx=150):
     """
     Plot traces for flattened chains. Modifed from Adrian Price-Whelan's code.
-    For each parameter, plot each walker on left, and a histogram from all walkers past converged_idx steps
+    For each parameter, plot at most 10 walkers on left, and a histogram from *all* walkers past converged_idx steps
 
     Test convergence:
     - visual analysis using trace plots
@@ -158,14 +156,14 @@ def walker(chainFile='chain.pkl', converged_idx=150):
     # get parameter names
     import setuputil
     paramSetup = setuputil.loadParams(config)
-    pnames = paramSetup['panme']
+    pnames = paramSetup['pname']
 
     with open(chainFile) as f:
         chain = pickle.load(f)
 
     try:
         import plotutils.autocorr as ac
-        converged_idx = 5 * ac.emcee_chain_autocorrelation_lengths(chain)
+        converged_idx = int(np.max(5 * ac.emcee_chain_autocorrelation_lengths(chain)))
     except:
         pass
 
@@ -196,8 +194,8 @@ def walker(chainFile='chain.pkl', converged_idx=150):
             max_var = max(np.var(these_chains[:, converged_idx:], axis=1))
 
             totalwidth = these_chains.max() - these_chains.min()
-            rms = np.std(these_chains[converged_idx:])
-            nbins = totalwidth/rms
+            rms = np.std(these_chains[:, converged_idx:])
+            nbins = totalwidth/rms * 5
 
             ax1 = plt.subplot(gs[counter_gs, :2])
             ax1.set_axis_bgcolor("#333333")
@@ -205,7 +203,14 @@ def walker(chainFile='chain.pkl', converged_idx=150):
                         color="#67A9CF",
                         alpha=0.7,
                         linewidth=2)
-            for walker in these_chains:
+
+            # plot trace for nw walkers
+            if these_chains.shape[0] > 5:
+                nw = 10
+            else:
+                nw = these_chains.shape[0]
+
+            for walker in these_chains[np.random.choice(these_chains.shape[0], nw, replace=False),:]:
                 ax1.plot(np.arange(len(walker))-converged_idx, walker,
                          drawstyle="steps",
                          color=cm.bone_r(np.var(walker[converged_idx:]) / max_var),

@@ -664,12 +664,16 @@ def email_self(receiver='tleung@astro.cornell.edu'):
         print("Sendmail exit status {}".format(sts))
 
 
+import cPickle as pickle
 import os
 # pos - A list of current positions of walkers in the parameter space; dim = (nwalkers, dim)
 # prob - The list of log posterior probabilities for the walkers at positions given by pos . The shape of this object is (nwalkers, dim).
 # state - the random number generator state
 # amp - metadata 'blobs' associated with the current positon
-niter = 10000
+# nsamples = 1e6
+# niter = int(round(nsamples/nwalkers))
+# nsessions = 10
+niter = 3600    # 10000
 saveint = 100
 nsessions = 2       # so we don't have to interupt the program to stop sampling
 
@@ -677,7 +681,7 @@ valid = {"yes": True, "y": True, "ye": True,
          "no": False, "n": False}
 
 for i in range(nsessions):
-    for pos, prob, state, amp in sampler.sample(pos0, iterations=niter/nsessions):
+    for pos, prob, state, amp in sampler.sample(pos0, iterations=int(niter/nsessions)):
     # using sampler.sample() will have pre-defined 0s in elements (cf. run_mcmc())
         walkers, steps, dim = sampler.chain.shape
         result = [
@@ -702,16 +706,16 @@ for i in range(nsessions):
             posteriordat.add_row(superpos)
 
         # only save if it has went through saveint iterations or is the last sample
-        if (sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1] == saveint) or (sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1] == niter):
+        if not sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1] % saveint or (sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1] == int(niter/nsessions)):
             posteriordat.write('posteriorpdf2.fits', overwrite=True)
             #posteriordat.write('posteriorpdf.txt', format='ascii')
 
             # extract rows that has been sampled; to pair with sampler.sample()
             # KEEP for future debugging w/ visualutil.test_reconstruct_chain()
-            # cc = sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :]
-            # with open('chain.pkl', 'wb') as f:
-            #     pickle.dump(cc, f, -1)
-            # del cc
+            cc = sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :]
+            with open('chain.pkl', 'wb') as f:
+                pickle.dump(cc, f, -1)
+            del cc
 
     email_self()
     print("We have {:d} samples. ".format(sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1]))

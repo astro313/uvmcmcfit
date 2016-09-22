@@ -584,7 +584,6 @@ else:
     pos0 = pzero
 
 
-import cPickle as pickle
 import os
 # pos - A list of current positions of walkers in the parameter space; dim = (nwalkers, dim)
 # prob - The list of log posterior probabilities for the walkers at positions given by pos . The shape of this object is (nwalkers, dim).
@@ -628,7 +627,7 @@ for pos, prob, state, amp in sampler.sample(pos0, iterations=niter):
         #posteriordat.write('posteriorpdf.txt', format='ascii')
 
         # Here, extract rows that has been sampled; to pair with sampler.sample()
-        cc = sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :]
-        with open('chain.pkl', 'wb') as f:
-            pickle.dump(cc, f, -1)
-        del cc
+        # cc = sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :]
+        # with open('chain.pkl', 'wb') as f:
+        #     pickle.dump(cc, f, -1)
+        # del cc

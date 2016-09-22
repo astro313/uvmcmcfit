@@ -679,12 +679,17 @@ import os
 # prob - The list of log posterior probabilities for the walkers at positions given by pos . The shape of this object is (nwalkers, dim).
 # state - the random number generator state
 # amp - metadata 'blobs' associated with the current positon
-# nsamples = 1e6
-# niter = int(round(nsamples/nwalkers))
-# nsessions = 10
-niter = 360    # 10000
+
+# in general, we want many samples.
+# niter & nsesions dep. on nwalkers
+nsamples = 1e6
+niter = int(round(nsamples/nwalkers))
+nsessions = 10
 saveint = 100
-nsessions = 2       # so we don't have to interupt the program to stop sampling
+
+# below for testing..
+# niter = 360    # 10000
+# nsessions = 2
 
 valid = {"yes": True, "y": True, "ye": True,
          "no": False, "n": False}

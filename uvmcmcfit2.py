@@ -599,8 +599,6 @@ for pos, prob, state, amp in sampler.sample(pos0, iterations=niter):
 
     walkers, steps, dim = sampler.chain.shape
     result = [
-#            "Walkers: {:d}".format(walkers),
-#            "Steps:   {:d}".format(steps),
             "Mean Acceptance fraction across all walkers of this iteration: {:.2f}".format(numpy.mean(sampler.acceptance_fraction)),
             "Mean lnprob and Max lnprob values: {:f} {:f}".format(numpy.mean(prob), numpy.max(prob)),
             "Time to run previous set of walkers (seconds): {:f}".format(time.time() - currenttime)
@@ -626,7 +624,8 @@ for pos, prob, state, amp in sampler.sample(pos0, iterations=niter):
         posteriordat.write('posteriorpdf2.fits', overwrite=True)
         #posteriordat.write('posteriorpdf.txt', format='ascii')
 
-        # Here, extract rows that has been sampled; to pair with sampler.sample()
+        # extract rows that has been sampled; to pair with sampler.sample()
+        # KEEP for future debugging w/ visualutil.test_reconstruct_chain()
         # cc = sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :]
         # with open('chain.pkl', 'wb') as f:
         #     pickle.dump(cc, f, -1)

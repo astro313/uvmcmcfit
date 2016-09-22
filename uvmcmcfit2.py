@@ -646,12 +646,12 @@ def query_yes_no(question, default=None):
 #        sys.stdout.flush()
 
 
-def email_self(message, receiver='tleung@astro.cornell.edu'):
+def email_self(msg, receiver='tleung@astro.cornell.edu'):
 
     '''
     Parameters
     ----------
-    message: str
+    msg: str
         in email
 
     '''
@@ -665,9 +665,9 @@ def email_self(message, receiver='tleung@astro.cornell.edu'):
     p.write("Subject: uvmcmcfit needs a respond to continuue. \n")
     p.write("\n")    # blank line separating headers from body
 
-    message = "\n\n"
+    message = msg + "\n\n" + ' Continue?'
 
-    p.write(message + ' Continue?')
+    p.write(message)
     sts = p.close()
     if sts != 0:
         print("Sendmail exit status {}".format(sts))
@@ -727,13 +727,16 @@ for i in range(nsessions):
             del cc
 
     message = "We have {:d} samples. ".format(sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1])
-    email_self(message)
-    print(message)
-    ret = nonBlockingRawInput("Shall we continuue with next session? (Y/N)", timeout=3600).lower()
-    if ret in valid:
-        if not valid[ret]:
-            import sys
-            sys.exit("Quiting after {} samples... ".format(sampler.flatlnprobability.shape[0]))
-        else:
-            sys.stdout.write("Please respond with 'yes' or 'no' "                     "(or 'y' or 'n').\n")
 
+    if i < nsessions-1:
+        email_self(message)
+        print(message)
+        ret = nonBlockingRawInput("Shall we continuue with next session? (Y/N)", timeout=3600).lower()
+        if ret in valid:
+            if not valid[ret]:
+                import sys
+                sys.exit("Quiting after {} samples... ".format(sampler.flatlnprobability.shape[0]))
+            else:
+                sys.stdout.write("Please respond with 'yes' or 'no' "                     "(or 'y' or 'n').\n")
+
+print("Finish all {:d} sessions".format(nsessions))

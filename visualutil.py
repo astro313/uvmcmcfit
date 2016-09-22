@@ -1,4 +1,4 @@
-def reconstruct_chain(bestfitloc='posteriorpdf.fits'):
+def reconstruct_chain(bestfitloc='posteriorpdf.fits', outfile='chain_reconstructed.pkl'):
     """
 
     Reconstruct an unflattened chain from bestfitloc.
@@ -6,6 +6,20 @@ def reconstruct_chain(bestfitloc='posteriorpdf.fits'):
     If this works, it would be better than saving unflattened chain in an additional pickle file, since this occupies much less space.
 
     From posterior, mus' are also parameters, and have their own chains
+
+    Parameters
+    ----------
+    bestfitloc: str
+        where the flattened chains are stored
+    outfile: str
+        output filename to save unflattened chains
+
+    Returns
+    -------
+    outfile:
+        pickle file containing unflattened chains that we can run our visualize programs with.
+    chains:
+        reconstructed chains
 
     """
 
@@ -35,9 +49,10 @@ def reconstruct_chain(bestfitloc='posteriorpdf.fits'):
         for i in range(nwalkers):
             chains[i, :, ii] = these_chains[::nwalkers]
 
-    # import cPickle as pickle
-    # with open(chainFile) as f:
-    #     chain = pickle.dump(f)
+    import cPickle as pickle
+    with open(outfile, 'wb') as f:
+        pickle.dump(chains, f, -1)
+    print("Saved reconstructed unflattened chains to {}.".format(outfile))
 
     return chains
 
@@ -53,6 +68,7 @@ def test_reconstruct_chain(bestfitloc='posteriorpdf.fits', chainFile='chain.pkl'
         chain = pickle.load(f)
 
     reconstructed = reconstruct_chain(bestfitloc)
+    import pdb; pdb.set_trace()
 
     # number of walkers and iterations should be the same
     assert (reconstructed.shape[0] == chain.shape[0])
@@ -60,7 +76,6 @@ def test_reconstruct_chain(bestfitloc='posteriorpdf.fits', chainFile='chain.pkl'
 
     # compare 1st iteration of 0th walker, of the same parameter
     assert (reconstructed[0, 0, 2] == chain[0, 0, 1])
-
 
 
 def plotPDF(fitresults, tag, limits='', Ngood=5000, axes='auto'):

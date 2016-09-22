@@ -569,7 +569,6 @@ else:
 #os.system('date')
 currenttime = time.time()
 
-
 # do burn-in if posteriorpdf2.fits doesn't exist or contains any samples
 # But, it's difficult to judge how many steps is needed
 # need to may sure later that we are sampling longer than the AC time
@@ -587,12 +586,13 @@ else:
 
 import cPickle as pickle
 import os
-# pos - A list of the current positions of the walkers in the parameter space. The shape of this object will be (nwalkers, dim)
+# pos - A list of current positions of walkers in the parameter space; dim = (nwalkers, dim)
 # prob - The list of log posterior probabilities for the walkers at positions given by pos . The shape of this object is (nwalkers, dim).
-# state the random number generator state
-# amp the metadata 'blobs' associated with the current positoni
-niter = 10000
+# state - the random number generator state
+# amp - metadata 'blobs' associated with the current positon
+niter = 5   # 10000
 for pos, prob, state, amp in sampler.sample(pos0, iterations=niter):
+    # using sampler.sample() will have pre-defined 0s in elements (cf. run_mcmc())
 
     walkers, steps, dim = sampler.chain.shape
     result = [
@@ -620,19 +620,9 @@ for pos, prob, state, amp in sampler.sample(pos0, iterations=niter):
     posteriordat.write('posteriorpdf2.fits', overwrite=True)
     #posteriordat.write('posteriorpdf.txt', format='ascii')
 
+    # Here, only store and append sampler.chains that if the row is non-zero, i.e. has been ; to pair with sampler.sample()
+    cc = sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :]
 
-    # sometimes, we interupt the sampling before it goes through all the iteractions to check for
-    # convergence.
-    # Here, only store and append sampler.chains that if the row is non-zero, i.e. has been sampled
-    cc = sampler.chain[:, numpy.all(sampler.chain[0,:,:] != 0, axis=1), :]
-
-    if os.path.exists('chain.pkl'):
-        with open('chain.pkl', 'rb') as f:
-            previousChains = pickle.load(f)
-        with open('chain.pkl', 'wb') as f:
-            pickle.dump(numpy.hstack((previousChains, cc)), f, -1)
-        del previousChains
-    else:
-        with open('chain.pkl', 'wb') as f:
-            pickle.dump(cc, f, -1)
+    with open('chain.pkl', 'wb') as f:
+        pickle.dump(cc, f, -1)
     del cc

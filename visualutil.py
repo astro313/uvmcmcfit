@@ -1,3 +1,68 @@
+def reconstruct_chain(bestfitloc='posteriorpdf.fits'):
+    """
+
+    Reconstruct an unflattened chain from bestfitloc.
+
+    If this works, it would be better than saving unflattened chain in an additional pickle file, since this occupies much less space.
+
+    From posterior, mus' are also parameters, and have their own chains
+
+    """
+
+    import numpy
+    from astropy.io import fits
+
+    print("Reading burnin results from {0:s}".format(bestfitloc))
+    pdf = fits.getdata(bestfitloc)
+
+    from astropy.table import Table
+    fitKeys = Table.read(bestfitloc).keys()
+
+    import yaml
+    configloc = 'config.yaml'
+    configfile = open(configloc)
+    config = yaml.load(configfile)
+
+    nwalkers = config['Nwalkers']
+    nsteps = len(pdf)/nwalkers
+    ndim = len(fitKeys)
+    assert isinstance(nsteps, int), 'the total number of sameples should be nsteps x nwalkers'
+
+    chains = numpy.empty([nwalkers, nsteps, ndim])
+    for ii, param in enumerate(fitKeys):
+        these_chains = pdf[param]
+
+        for i in range(nwalkers):
+            chains[i, :, ii] = these_chains[::nwalkers]
+
+    # import cPickle as pickle
+    # with open(chainFile) as f:
+    #     chain = pickle.dump(f)
+
+    return chains
+
+
+def test_reconstruct_chain(bestfitloc='posteriorpdf.fits', chainFile='chain.pkl'):
+
+    """
+        test that we have reconstructed the flattened chain
+
+    """
+    import cPickle as pickle
+    with open(chainFile) as f:
+        chain = pickle.load(f)
+
+    reconstructed = reconstruct_chain(bestfitloc)
+
+    # number of walkers and iterations should be the same
+    assert (reconstructed.shape[0] == chain.shape[0])
+    assert (reconstructed.shape[1] == chain.shape[1])
+
+    # compare 1st iteration of 0th walker, of the same parameter
+    assert (reconstructed[0, 0, 2] == chain[0, 0, 1])
+
+
+
 def plotPDF(fitresults, tag, limits='', Ngood=5000, axes='auto'):
 
     """

@@ -3,10 +3,14 @@
  Author: T. K. Daisy Leung
 
 
- Note: similar to uvmcmcfit.py, but here we edited it to throw out a pre-defined number of burn-in samples;
- save the unflattened chain as a separate file; and acceptance_fraction + misc stuff as a separate file
+Similar to uvmcmcfit.py, but here we edited it to
+    - throw out a pre-defined number of burn-in samples;
+    - save acceptance_fraction + misc stuff as a separate file
+    - only save samples every some number of samples (instead of every iteration)
+    - email ourselves once a certain number of samples have been obtained, and so we can decide whether or not to stop sampling instead of interupting the code
 
- Last modified: 2016 Sept 20
+
+ Last modified: 2016 Sept 22
 
  Note: This is experimental software that is in a very active stage of
  development.  If you are interested in using this for your research, please
@@ -584,6 +588,82 @@ else:
     pos0 = pzero
 
 
+class AlarmException(Exception):
+    pass
+
+
+def alarmHandler(signum, frame):
+    raise AlarmException
+
+
+def nonBlockingRawInput(prompt='', timeout=20):
+    import signal
+    signal.signal(signal.SIGALRM, alarmHandler)
+    signal.alarm(timeout)
+    try:
+        text = raw_input(prompt)
+        signal.alarm(0)
+        return text
+    except AlarmException:
+        print('\nPrompt timeout. Continuing...')
+    signal.signal(signal.SIGALRM, signal.SIG_IGN)
+    return ''
+
+
+def query_yes_no(question, default=None):
+    """Ask a yes/no question via raw_input() and return their answer.
+
+    "question" is a string that is presented to the user.
+    "default" is the presumed answer if the user just hits <Enter>.
+        It must be "yes" (the default), "no" or None (meaning
+        an answer is required of the user).
+
+    The "answer" return value is True for "yes" or False for "no".
+    """
+
+    import sys
+    valid = {"yes": True, "y": True, "ye": True,
+             "no": False, "n": False}
+    if default is None:
+        prompt = " [y/n] "
+    elif default == "yes":
+        prompt = " [Y/n] "
+    elif default == "no":
+        prompt = " [y/N] "
+    else:
+        raise ValueError("invalid default answer: '%s'" % default)
+
+    while True:
+        sys.stdout.write(question + prompt)
+        choice = raw_input().lower()
+        if default is not None and choice == '':
+            return valid[default]
+        elif choice in valid:
+            return valid[choice]
+        else:
+            sys.stdout.write("Please respond with 'yes' or 'no' "
+                             "(or 'y' or 'n').\n")
+#        sys.stdout.flush()
+
+
+def email_self(receiver='tleung@astro.cornell.edu'):
+    import os
+
+    #email
+    SENDMAIL = "/usr/sbin/sendmail"
+    p = os.popen("%s -t" % SENDMAIL, "w")
+    p.write("To: "+receiver+"\n")
+    p.write("Subject: uvmcmcfit needs a respond to continuue. \n")
+    p.write("\n")    # blank line separating headers from body
+
+    message = "We have ran iterations == saveint. \n\n"
+
+    p.write(message)
+    sts = p.close()
+    if sts != 0:
+        print("Sendmail exit status {}".format(sts))
+
+
 import os
 # pos - A list of current positions of walkers in the parameter space; dim = (nwalkers, dim)
 # prob - The list of log posterior probabilities for the walkers at positions given by pos . The shape of this object is (nwalkers, dim).
@@ -591,42 +671,55 @@ import os
 # amp - metadata 'blobs' associated with the current positon
 niter = 10000
 saveint = 100
+nsessions = 2       # so we don't have to interupt the program to stop sampling
 
-counter = 0
-for pos, prob, state, amp in sampler.sample(pos0, iterations=niter):
+valid = {"yes": True, "y": True, "ye": True,
+         "no": False, "n": False}
+
+for i in range(nsessions):
+    for pos, prob, state, amp in sampler.sample(pos0, iterations=niter/nsessions):
     # using sampler.sample() will have pre-defined 0s in elements (cf. run_mcmc())
-    counter += 1
-
-    walkers, steps, dim = sampler.chain.shape
-    result = [
+        walkers, steps, dim = sampler.chain.shape
+        result = [
             "Mean Acceptance fraction across all walkers of this iteration: {:.2f}".format(numpy.mean(sampler.acceptance_fraction)),
             "Mean lnprob and Max lnprob values: {:f} {:f}".format(numpy.mean(prob), numpy.max(prob)),
             "Time to run previous set of walkers (seconds): {:f}".format(time.time() - currenttime)
-            ]
-    print('\n'.join(result))
-    f = open('summary.txt','a')
-    f.write('\n'.join(result))
-    f.write('\n')
-    f.close()
+                ]
+        print('\n'.join(result))
+        f = open('summary.txt', 'a')
+        f.write('\n'.join(result))
+        f.write('\n')
+        f.close()
 
-    currenttime = time.time()
-    #ff.write(str(prob))
+        currenttime = time.time()
+        #ff.write(str(prob))
 
-    superpos = numpy.zeros(1 + nparams + nmu)
-    for wi in range(nwalkers):
-        superpos[0] = prob[wi]
-        superpos[1:nparams + 1] = pos[wi]
-        superpos[nparams + 1:nparams + nmu + 1] = amp[wi]
-        posteriordat.add_row(superpos)
+        superpos = numpy.zeros(1 + nparams + nmu)
+        for wi in range(nwalkers):
+            superpos[0] = prob[wi]
+            superpos[1:nparams + 1] = pos[wi]
+            superpos[nparams + 1:nparams + nmu + 1] = amp[wi]
+            posteriordat.add_row(superpos)
 
-    # only save if it has went through saveint iterations or is the last sample
-    if (sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1] == saveint) or (sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1] == niter):
-        posteriordat.write('posteriorpdf2.fits', overwrite=True)
-        #posteriordat.write('posteriorpdf.txt', format='ascii')
+        # only save if it has went through saveint iterations or is the last sample
+        if (sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1] == saveint) or (sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1] == niter):
+            posteriordat.write('posteriorpdf2.fits', overwrite=True)
+            #posteriordat.write('posteriorpdf.txt', format='ascii')
 
-        # extract rows that has been sampled; to pair with sampler.sample()
-        # KEEP for future debugging w/ visualutil.test_reconstruct_chain()
-        # cc = sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :]
-        # with open('chain.pkl', 'wb') as f:
-        #     pickle.dump(cc, f, -1)
-        # del cc
+            # extract rows that has been sampled; to pair with sampler.sample()
+            # KEEP for future debugging w/ visualutil.test_reconstruct_chain()
+            # cc = sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :]
+            # with open('chain.pkl', 'wb') as f:
+            #     pickle.dump(cc, f, -1)
+            # del cc
+
+    email_self()
+    print("We have {:d} samples. ".format(sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1]))
+    ret = nonBlockingRawInput("Shall we continuue with next session? (Y/N)", timeout=3600).lower()
+    if ret in valid:
+        if not valid[ret]:
+            import sys
+            sys.exit("Quiting after {} samples... ".format(sampler.flatlnprobability.shape[0]))
+        else:
+            sys.stdout.write("Please respond with 'yes' or 'no' "                     "(or 'y' or 'n').\n")
+

@@ -646,7 +646,16 @@ def query_yes_no(question, default=None):
 #        sys.stdout.flush()
 
 
-def email_self(receiver='tleung@astro.cornell.edu'):
+def email_self(message, receiver='tleung@astro.cornell.edu'):
+
+    '''
+    Parameters
+    ----------
+    message: str
+        in email
+
+    '''
+
     import os
 
     #email
@@ -656,9 +665,9 @@ def email_self(receiver='tleung@astro.cornell.edu'):
     p.write("Subject: uvmcmcfit needs a respond to continuue. \n")
     p.write("\n")    # blank line separating headers from body
 
-    message = "We have ran iterations == saveint. \n\n"
+    message = "\n\n"
 
-    p.write(message)
+    p.write(message + ' Continue?')
     sts = p.close()
     if sts != 0:
         print("Sendmail exit status {}".format(sts))
@@ -673,7 +682,7 @@ import os
 # nsamples = 1e6
 # niter = int(round(nsamples/nwalkers))
 # nsessions = 10
-niter = 3600    # 10000
+niter = 360    # 10000
 saveint = 100
 nsessions = 2       # so we don't have to interupt the program to stop sampling
 
@@ -717,8 +726,9 @@ for i in range(nsessions):
                 pickle.dump(cc, f, -1)
             del cc
 
-    email_self()
-    print("We have {:d} samples. ".format(sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1]))
+    message = "We have {:d} samples. ".format(sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1])
+    email_self(message)
+    print(message)
     ret = nonBlockingRawInput("Shall we continuue with next session? (Y/N)", timeout=3600).lower()
     if ret in valid:
         if not valid[ret]:

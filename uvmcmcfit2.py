@@ -590,9 +590,13 @@ import os
 # prob - The list of log posterior probabilities for the walkers at positions given by pos . The shape of this object is (nwalkers, dim).
 # state - the random number generator state
 # amp - metadata 'blobs' associated with the current positon
-niter = 5   # 10000
+niter = 10000
+saveint = 100
+
+counter = 0
 for pos, prob, state, amp in sampler.sample(pos0, iterations=niter):
     # using sampler.sample() will have pre-defined 0s in elements (cf. run_mcmc())
+    counter += 1
 
     walkers, steps, dim = sampler.chain.shape
     result = [
@@ -610,19 +614,21 @@ for pos, prob, state, amp in sampler.sample(pos0, iterations=niter):
 
     currenttime = time.time()
     #ff.write(str(prob))
-    superpos = numpy.zeros(1 + nparams + nmu)
 
+    superpos = numpy.zeros(1 + nparams + nmu)
     for wi in range(nwalkers):
         superpos[0] = prob[wi]
         superpos[1:nparams + 1] = pos[wi]
         superpos[nparams + 1:nparams + nmu + 1] = amp[wi]
         posteriordat.add_row(superpos)
-    posteriordat.write('posteriorpdf2.fits', overwrite=True)
-    #posteriordat.write('posteriorpdf.txt', format='ascii')
 
-    # Here, only store and append sampler.chains that if the row is non-zero, i.e. has been ; to pair with sampler.sample()
-    cc = sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :]
+    # only save if it has went through saveint iterations or is the last sample
+    if (sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1] == saveint) or (sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1] == niter):
+        posteriordat.write('posteriorpdf2.fits', overwrite=True)
+        #posteriordat.write('posteriorpdf.txt', format='ascii')
 
-    with open('chain.pkl', 'wb') as f:
-        pickle.dump(cc, f, -1)
-    del cc
+        # Here, extract rows that has been sampled; to pair with sampler.sample()
+        cc = sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :]
+        with open('chain.pkl', 'wb') as f:
+            pickle.dump(cc, f, -1)
+        del cc

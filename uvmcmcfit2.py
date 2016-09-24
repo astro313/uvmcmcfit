@@ -685,7 +685,7 @@ import os
 nsamples = 1e6
 niter = int(round(nsamples/nwalkers))
 nsessions = 10
-saveint = 100
+saveint = 10000
 
 # below for testing..
 # niter = 360    # 10000
@@ -719,7 +719,7 @@ for i in range(nsessions):
             superpos[nparams + 1:nparams + nmu + 1] = amp[wi]
             posteriordat.add_row(superpos)
 
-        # only save if it has went through saveint iterations or is the last sample
+        # only save if it has went through every saveint iterations or is the last sample
         if not sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1] % saveint or (sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1] == int(niter/nsessions)):
             posteriordat.write('posteriorpdf2.fits', overwrite=True)
             #posteriordat.write('posteriorpdf.txt', format='ascii')
@@ -727,11 +727,15 @@ for i in range(nsessions):
             # extract rows that has been sampled; to pair with sampler.sample()
             # KEEP for future debugging w/ visualutil.test_reconstruct_chain()
             cc = sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :]
+            if sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1] == saveint and i != 0:
+                with open('chain.pkl', 'rb') as f:
+                    _cc = pickle.load(f)
+                    cc = numpy.hstack((_cc, cc))
             with open('chain.pkl', 'wb') as f:
                 pickle.dump(cc, f, -1)
             del cc
 
-    message = "We have {:d} samples. ".format(sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1])
+    message = "We have finished {:d} iterations with {:d} walkers. ".format(sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1], nwalkers)
 
     if i < nsessions-1:
         email_self(message)
@@ -741,7 +745,7 @@ for i in range(nsessions):
             if not valid[ret]:
                 import sys
                 sys.exit("Quiting after {} samples... ".format(sampler.flatlnprobability.shape[0]))
-            else:
-                sys.stdout.write("Please respond with 'yes' or 'no' "                     "(or 'y' or 'n').\n")
+        else:
+            sys.stdout.write("Please respond with 'yes' or 'no' "                     "(or 'y' or 'n').\n")
 
 print("Finish all {:d} sessions".format(nsessions))

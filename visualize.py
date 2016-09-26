@@ -63,11 +63,13 @@ def check_and_thin_chain(chainFile='chain.pkl'):
 
     # If you leave off mean=False, then the function first averages the locations of all the walkers together, and plots the motion of this centroid over the course of the run
     plt.clf()
+    plt.figure(figsize=(20.6, 16))
     pu.plot_emcee_chains(chain, mean=False)
     plt.savefig('trace_unflattened_chain')
 
     # should fall off to zero after some time
     plt.clf()
+    plt.figure(figsize=(20.6, 16))
     ac.plot_emcee_chain_autocorrelation_functions(chain)
     plt.savefig('ACF_unflattened_chain')
 

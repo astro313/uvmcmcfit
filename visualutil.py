@@ -117,7 +117,7 @@ def plotPDF(fitresults, tag, limits='', Ngood=5000, axes='auto'):
     ncol = 4
     nrow = (nparams/ncol + 1) if nparams % ncol != 0 else nparams/ncol
 
-    plt.figure(figsize=(12.0, 2.0 * nrow))
+    plt.figure(figsize=(18.0, 2.0 * nrow))
 
     # set up the plotting window
     plt.subplots_adjust(left=0.08, bottom=0.15, right=0.95, top=0.95,

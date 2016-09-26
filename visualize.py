@@ -59,11 +59,10 @@ def check_and_thin_chain(chainFile='chain.pkl'):
     with open(chainFile) as f:
         chain = pickle.load(f)
 
-    import pdb; pdb.set_trace()
-
     walkers, steps, dim = chain.shape
 
     # If you leave off mean=False, then the function first averages the locations of all the walkers together, and plots the motion of this centroid over the course of the run
+    plt.clf()
     pu.plot_emcee_chains(chain, mean=False)
     plt.savefig('trace_unflattened_chain')
 

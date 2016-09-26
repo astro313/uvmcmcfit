@@ -47,7 +47,7 @@ def reconstruct_chain(bestfitloc='posteriorpdf.fits', outfile='chain_reconstruct
         these_chains = pdf[param]
 
         for i in range(nwalkers):
-            chains[i, :, ii] = these_chains[::nwalkers]
+            chains[i, :, ii] = these_chains[i::nwalkers]
 
     import cPickle as pickle
     with open(outfile, 'wb') as f:
@@ -62,20 +62,27 @@ def test_reconstruct_chain(bestfitloc='posteriorpdf.fits', chainFile='chain.pkl'
     """
         test that we have reconstructed the flattened chain
 
+    Parameters
+    ----------
+    bestfitloc: str
+        the fits file from which we will reconstruct the chain
+    chainFile: str
+        the pickle file with unflattened chain
+
     """
     import cPickle as pickle
     with open(chainFile) as f:
         chain = pickle.load(f)
 
     reconstructed = reconstruct_chain(bestfitloc)
+
     import pdb; pdb.set_trace()
 
     # number of walkers and iterations should be the same
     assert (reconstructed.shape[0] == chain.shape[0])
     assert (reconstructed.shape[1] == chain.shape[1])
 
-    # compare 1st iteration of 0th walker, of the same parameter
-    assert (reconstructed[0, 0, 2] == chain[0, 0, 1])
+    assert (reconstructed[:, :, 1] == chain[:, :, 0])
 
 
 def plotPDF(fitresults, tag, limits='', Ngood=5000, axes='auto'):

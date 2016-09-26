@@ -596,7 +596,10 @@ def alarmHandler(signum, frame):
     raise AlarmException
 
 
-def nonBlockingRawInput(prompt='', timeout=20):
+def nonBlockingRawInput(prompt='', timeout=20, response='yes'):
+    '''
+
+    '''
     import signal
     signal.signal(signal.SIGALRM, alarmHandler)
     signal.alarm(timeout)
@@ -607,7 +610,7 @@ def nonBlockingRawInput(prompt='', timeout=20):
     except AlarmException:
         print('\nPrompt timeout. Continuing...')
     signal.signal(signal.SIGALRM, signal.SIG_IGN)
-    return ''
+    return response
 
 
 def query_yes_no(question, default=None):
@@ -730,7 +733,7 @@ for i in range(nsessions):
             # extract rows that has been sampled; to pair with sampler.sample()
             # KEEP for future debugging w/ visualutil.test_reconstruct_chain()
             cc = sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :]
-            if os.path.exists('chain.pkl') and i != 0:
+            if os.path.exists('chain.pkl'):
                 _ccidx = cc[:, saveidx:numpy.squeeze(numpy.where(numpy.all(sampler.chain[0, :, :] != 0, axis=1)))[-1]+1, :]
 
                 with open('chain.pkl', 'rb') as f:
@@ -748,15 +751,14 @@ for i in range(nsessions):
     if i < nsessions-1:
         email_self(message)
         print(message)
-        ret = None
+        ret = nonBlockingRawInput("Shall we continuue with next session? (Y/N)", timeout=600).lower()
+
         while not ret in valid:
+            print("Please respond with 'yes' or 'no' (or 'y' or 'n').\n")
             ret = nonBlockingRawInput("Shall we continuue with next session? (Y/N)", timeout=600).lower()
-            if ret in valid:
-                if not valid[ret]:
-                    import sys
-                    sys.exit("Quiting... ")
-            else:
-                print("Please respond with 'yes' or 'no' (or 'y' or 'n').\n")
+        if not valid[ret]:
+            import sys
+            sys.exit("Quiting... ")
 
     sampler.reset()
     pos0 = pos

@@ -146,7 +146,6 @@ def walker(chainFile='chain.pkl', converged_idx=0):
 
     converged_idx: ind
         index of iteration steps --> threshold for plotting posterior.
-        if plotutils is installed, the input won't matter
 
     """
 
@@ -167,11 +166,7 @@ def walker(chainFile='chain.pkl', converged_idx=0):
     with open(chainFile) as f:
         chain = pickle.load(f)
 
-    try:
-        import plotutils.autocorr as ac
-        converged_idx = int(np.max(5 * ac.emcee_chain_autocorrelation_lengths(chain)))
-    except:
-        pass
+    converged_idx = visualutil.get_autocor(chainFile) * 5
 
     import matplotlib.gridspec as gridspec
     from matplotlib.backends.backend_pdf import PdfPages
@@ -309,7 +304,6 @@ def walker_reconstructed(bestfitloc='posteriorpdf.fits', chainFile='chain_recons
 
     converged_idx: ind
         index of iteration steps --> threshold for plotting posterior.
-        if plotutils is installed, the input won't matter
 
     """
 
@@ -330,11 +324,7 @@ def walker_reconstructed(bestfitloc='posteriorpdf.fits', chainFile='chain_recons
     with open(chainFile) as f:
         chain = pickle.load(f)
 
-    try:
-        import plotutils.autocorr as ac
-        converged_idx = int(np.max(5 * ac.emcee_chain_autocorrelation_lengths(chain)))
-    except:
-        pass
+    converged_idx = visualutil.get_autocor(chainFile) * 5
 
     import matplotlib.gridspec as gridspec
     from matplotlib.backends.backend_pdf import PdfPages
@@ -451,8 +441,8 @@ def walker_reconstructed(bestfitloc='posteriorpdf.fits', chainFile='chain_recons
 
 def quality(bestfitloc='posteriorpdf.fits', Ngood=5000):
     '''
-    Ad-hoc way to compare models of different setup, should really be likelihood ratio * Ockham factor.
-    Treat chi2 as -2 * lnprob.
+    Ad-hoc way to compare models of different setup, should really be likelihood ratio * Ockham factor; using Bayes Evidence
+    here we just treat chi2 as -2 * lnprob; but model is non-linear.
 
     '''
 

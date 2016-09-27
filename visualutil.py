@@ -85,6 +85,35 @@ def test_reconstruct_chain(bestfitloc='posteriorpdf.fits', chainFile='chain.pkl'
     assert (reconstructed[:, :, 1] == chain[:, :, 0])
 
 
+def get_autocor(chainFile='chain.pkl'):
+    '''
+    get the AC length across all iterations for each param averaging over all the walkers
+
+    Returns
+    -------
+    idx: int
+        max. ac length among all parameters
+
+    '''
+    #     chainFile = 'chain_reconstructed.pkl'
+
+    import cPickle as pickle
+    with open(chainFile) as f:
+        chain = pickle.load(f)
+
+    from emcee import autocorr
+    import numpy as np
+
+    ac = []
+    for i in range(chain.shape[-1]):
+        dum = autocorr.integrated_time(np.mean(chain[:, :, i], axis=0), axis=0, fast=False)
+        ac.append(dum)
+        autocorr_message = '{0:.2f}'.format(dum)
+#    print(autocorr_message)
+    idx = int(np.max(ac))
+    return idx
+
+
 def plotPDF(fitresults, tag, limits='', Ngood=5000, axes='auto'):
 
     """

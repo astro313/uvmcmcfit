@@ -125,7 +125,7 @@ def convergence(bestfitloc='posteriorpdf.fits'):
     savefig(outfile)
 
 
-def walker(chainFile='chain.pkl', converged_idx=0):
+def walker(chainFile='chain.pkl', converged_idx=None):
     """
 
     Plot traces for flattened chains. Modifed from Adrian Price-Whelan's code.
@@ -166,7 +166,8 @@ def walker(chainFile='chain.pkl', converged_idx=0):
     with open(chainFile) as f:
         chain = pickle.load(f)
 
-    converged_idx = visualutil.get_autocor(chainFile) * 5
+    if converged_idx is None:
+        converged_idx = visualutil.get_autocor(chainFile) * 5
 
     import matplotlib.gridspec as gridspec
     from matplotlib.backends.backend_pdf import PdfPages
@@ -197,7 +198,8 @@ def walker(chainFile='chain.pkl', converged_idx=0):
             totalwidth = these_chains.max() - these_chains.min()
             rms = np.std(these_chains[:, converged_idx:])
             nbins = totalwidth/rms * 5
-
+            if totalwidth == 0:
+                nbins = 35
             ax1 = plt.subplot(gs[counter_gs, :2])
             ax1.set_axis_bgcolor("#333333")
             ax1.axvline(0,
@@ -324,7 +326,8 @@ def walker_reconstructed(bestfitloc='posteriorpdf.fits', chainFile='chain_recons
     with open(chainFile) as f:
         chain = pickle.load(f)
 
-    converged_idx = visualutil.get_autocor(chainFile) * 5
+    if converged_idx is None:
+        converged_idx = visualutil.get_autocor(chainFile) * 5
 
     import matplotlib.gridspec as gridspec
     from matplotlib.backends.backend_pdf import PdfPages

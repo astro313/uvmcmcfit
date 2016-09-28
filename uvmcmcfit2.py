@@ -10,7 +10,7 @@ Similar to uvmcmcfit.py, but here we edited it to
     - email ourselves once a certain number of samples have been obtained, and so we can decide whether or not to stop sampling instead of interupting the code
 
 
- Last modified: 2016 Sept 24
+ Last modified: 2016 Sept 27
 
  Note: This is experimental software that is in a very active stage of
  development.  If you are interested in using this for your research, please
@@ -725,16 +725,16 @@ for i in range(nsessions):
             posteriordat.add_row(superpos)
 
         # only save if it has went through every saveint iterations or is the last sample
-        if not sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1] % saveint or (sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1] == int(niter/nsessions)):
-            print("Ran {:d} iterations in this session. Saving data".format(sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1]))
+        if not sampler.chain[:, numpy.any(sampler.chain[0, :, :] != 0, axis=1), :].shape[1] % saveint or (sampler.chain[:, numpy.any(sampler.chain[0, :, :] != 0, axis=1), :].shape[1] == int(niter/nsessions)):
+            print("Ran {:d} iterations in this session. Saving data".format(sampler.chain[:, numpy.any(sampler.chain[0, :, :] != 0, axis=1), :].shape[1]))
             posteriordat.write('posteriorpdf2.fits', overwrite=True)
             #posteriordat.write('posteriorpdf.txt', format='ascii')
 
             # extract rows that has been sampled; to pair with sampler.sample()
             # KEEP for future debugging w/ visualutil.test_reconstruct_chain()
-            cc = sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :]
+            cc = sampler.chain[:, numpy.any(sampler.chain[0, :, :] != 0, axis=1), :]
             if os.path.exists('chain.pkl'):
-                _ccidx = cc[:, saveidx:numpy.squeeze(numpy.where(numpy.all(sampler.chain[0, :, :] != 0, axis=1)))[-1]+1, :]
+                _ccidx = cc[:, saveidx:numpy.squeeze(numpy.where(numpy.any(sampler.chain[0, :, :] != 0, axis=1)))[-1]+1, :]
 
                 with open('chain.pkl', 'rb') as f:
                     print("reading chain from previous save")
@@ -744,9 +744,9 @@ for i in range(nsessions):
             with open('chain.pkl', 'wb') as f:
                 pickle.dump(cc, f, -1)
             del cc
-            saveidx = sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1]
+            saveidx = sampler.chain[:, numpy.any(sampler.chain[0, :, :] != 0, axis=1), :].shape[1]
 
-    message = "We have finished {:d} iterations with {:d} walkers. ".format(sampler.chain[:, numpy.all(sampler.chain[0, :, :] != 0, axis=1), :].shape[1], nwalkers)
+    message = "We have finished {:d} iterations with {:d} walkers. ".format(sampler.chain[:, numpy.any(sampler.chain[0, :, :] != 0, axis=1), :].shape[1], nwalkers)
 
     if i < nsessions-1:
         email_self(message)
@@ -763,5 +763,8 @@ for i in range(nsessions):
     sampler.reset()
     pos0 = pos
 
-print("Finish all {:d} sessions".format(nsessions))
-print("Total number of samples: {:d}".format(niter/nsessions * nsessions * nwalkers))
+f = open('summary.txt', 'a')
+f.write("Finish all {:d} sessions \n".format(nsessions))
+f.wrte("Total number of samples: {:d} \n".format(niter/nsessions * nsessions * nwalkers))
+f.write('\n')
+f.close()

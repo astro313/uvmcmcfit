@@ -165,7 +165,7 @@ def plotPDF(fitresults, tag, limits='', Ngood=5000, axes='auto'):
         rmsval = numpy.std(frg)
         if rmsval > width:
             avgval = numpy.mean(frg)
-            print(pname + ' = ' + str(avgval) + ' +/- ' + str(rmsval))
+            print("{:s} = {:.4f} +/- {:.4f}").format(pname, avgval, rmsval)
             totalwidth = frg.max() - frg.min()
             nbins = totalwidth / rmsval * 5
 

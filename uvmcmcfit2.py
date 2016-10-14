@@ -10,7 +10,7 @@ Similar to uvmcmcfit.py, but here we edited it to
     - email ourselves once a certain number of samples have been obtained, and so we can decide whether or not to stop sampling instead of interupting the code
 
 
- Last modified: 2016 Sept 27
+ Last modified: 2016 Oct 13
 
  Note: This is experimental software that is in a very active stage of
  development.  If you are interested in using this for your research, please
@@ -148,7 +148,7 @@ def lnprior(pzero_regions, paramSetup):
 
 
 def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
-           fixindx, paramSetup, computeamp=True):
+           fixindx, paramSetup, computeamp=True, miriad=False):
     """ Function that computes the Ln likelihood of the data"""
 
     # search poff_models for parameters fixed relative to other parameters
@@ -329,7 +329,7 @@ def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
     return likeln, amp
 
 def lnprob(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
-           fixindx, paramSetup, computeamp=True):
+           fixindx, paramSetup, computeamp=True, miriad=False):
 
     """
 
@@ -345,7 +345,7 @@ def lnprob(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
         return probln, mu
 
     ll, mu = lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
-           fixindx, paramSetup, computeamp=computeamp)
+           fixindx, paramSetup, computeamp=computeamp, miriad=miriad)
 
     normalization = 1.0#2 * real.size
     probln = lp * normalization + ll
@@ -415,7 +415,7 @@ visfile = config['UVData']
 if config.keys().count('UseMiriad') > 0:
     miriad = config['UseMiriad']
 
-    if miriad == True:
+    if miriad:
         interactive = False
         index = visfile.index('uvfits')
         visfilemiriad = visfile[0:index] + 'miriad'
@@ -563,11 +563,11 @@ fixindx = setuputil.fixParams(paramSetup)
 if mpi:
     sampler = emcee.EnsembleSampler(nwalkers, nparams, lnprob, pool=pool, \
         args=[vis_complex, wgt, uuu, vvv, pcd, \
-        fixindx, paramSetup, computeamp])
+        fixindx, paramSetup, computeamp, miriad])
 else:
     sampler = emcee.EnsembleSampler(nwalkers, nparams, lnprob, \
         args=[vis_complex, wgt, uuu, vvv, pcd, \
-        fixindx, paramSetup, computeamp], threads=Nthreads)
+        fixindx, paramSetup, computeamp, miriad], threads=Nthreads)
 
 # Sample, outputting to a file
 #os.system('date')
@@ -759,6 +759,7 @@ for i in range(nsessions):
         if not valid[ret]:
             import sys
             sys.exit("Quiting... ")
+            if mpi: pool.close()
 
     sampler.reset()
     pos0 = pos
@@ -768,3 +769,5 @@ f.write("Finish all {:d} sessions \n".format(nsessions))
 f.wrte("Total number of samples: {:d} \n".format(niter/nsessions * nsessions * nwalkers))
 f.write('\n')
 f.close()
+
+if mpi: pool.close()

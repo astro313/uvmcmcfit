@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """
- Author: Shane Bussmann
+ Author: Shane Bussmann & T. K. Daisy Leung
 
- Last modified: 2014 February 26
+ Last modified: 2016 Oct 13
 
  Note: This is experimental software that is in a very active stage of
  development.  If you are interested in using this for your research, please
@@ -136,7 +136,7 @@ def lnprior(pzero_regions, paramSetup):
 
 
 def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
-           fixindx, paramSetup, computeamp=True):
+           fixindx, paramSetup, computeamp=True, miriad=False):
     """ Function that computes the Ln likelihood of the data"""
 
     # search poff_models for parameters fixed relative to other parameters
@@ -317,7 +317,7 @@ def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
     return likeln, amp
 
 def lnprob(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
-           fixindx, paramSetup, computeamp=True):
+           fixindx, paramSetup, computeamp=True, miriad=False):
 
     """
 
@@ -333,7 +333,7 @@ def lnprob(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
         return probln, mu
 
     ll, mu = lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
-           fixindx, paramSetup, computeamp=computeamp)
+           fixindx, paramSetup, computeamp=computeamp, miriad=miriad)
 
     normalization = 1.0#2 * real.size
     probln = lp * normalization + ll
@@ -403,7 +403,7 @@ visfile = config['UVData']
 if config.keys().count('UseMiriad') > 0:
     miriad = config['UseMiriad']
 
-    if miriad == True:
+    if miriad:
         interactive = False
         index = visfile.index('uvfits')
         visfilemiriad = visfile[0:index] + 'miriad'
@@ -551,11 +551,11 @@ fixindx = setuputil.fixParams(paramSetup)
 if mpi:
     sampler = emcee.EnsembleSampler(nwalkers, nparams, lnprob, pool=pool, \
         args=[vis_complex, wgt, uuu, vvv, pcd, \
-        fixindx, paramSetup, computeamp])
+        fixindx, paramSetup, computeamp, miriad])
 else:
     sampler = emcee.EnsembleSampler(nwalkers, nparams, lnprob, \
         args=[vis_complex, wgt, uuu, vvv, pcd, \
-        fixindx, paramSetup, computeamp], threads=Nthreads)
+        fixindx, paramSetup, computeamp, miriad], threads=Nthreads)
 
 # Sample, outputting to a file
 #os.system('date')
@@ -582,6 +582,9 @@ for pos, prob, state, amp in sampler.sample(pzero, iterations=10000):
         superpos[1:nparams + 1] = pos[wi]
         superpos[nparams + 1:nparams + nmu + 1] = amp[wi]
         posteriordat.add_row(superpos)
+    print("Writing, don't exit...")
     posteriordat.write('posteriorpdf.fits', overwrite=True)
+    print("Done saviing...")
     #posteriordat.write('posteriorpdf.txt', format='ascii')
 
+if mpi: pool.close()

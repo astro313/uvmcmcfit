@@ -168,6 +168,10 @@ def walker(chainFile='chain.pkl', converged_idx=None):
 
     if converged_idx is None:
         converged_idx = visualutil.get_autocor(chainFile) * 5
+        if np.isnan(converged_idx):
+           converged_idx = 200
+        if converged_idx > chain.shape[1]:
+           converged_idx = chain.shape[1]/10
 
     import matplotlib.gridspec as gridspec
     from matplotlib.backends.backend_pdf import PdfPages
@@ -198,7 +202,7 @@ def walker(chainFile='chain.pkl', converged_idx=None):
             totalwidth = these_chains.max() - these_chains.min()
             rms = np.std(these_chains[:, converged_idx:])
             nbins = totalwidth/rms * 5
-            if totalwidth == 0:
+            if not totalwidth:
                 nbins = 35
             ax1 = plt.subplot(gs[counter_gs, :2])
             ax1.set_axis_bgcolor("#333333")
@@ -358,6 +362,7 @@ def walker_reconstructed(bestfitloc='posteriorpdf.fits', chainFile='chain_recons
             totalwidth = these_chains.max() - these_chains.min()
             rms = np.std(these_chains[:, converged_idx:])
             nbins = totalwidth/rms * 5
+            nbins = nbins if nbins > 0 else 10
 
             ax1 = plt.subplot(gs[counter_gs, :2])
             ax1.set_axis_bgcolor("#333333")

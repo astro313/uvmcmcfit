@@ -766,7 +766,7 @@ for i in range(nsessions):
 
 f = open('summary.txt', 'a')
 f.write("Finish all {:d} sessions \n".format(nsessions))
-f.wrte("Total number of samples: {:d} \n".format(niter/nsessions * nsessions * nwalkers))
+f.write("Total number of samples: {:d} \n".format(niter/nsessions * nsessions * nwalkers))
 f.write('\n')
 f.close()
 

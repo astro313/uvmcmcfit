@@ -19,7 +19,7 @@ import sample_vis
 import uvutil
 
 
-def plot(cleanup=True, configloc='sandbox.yaml', interactive=True, threshold=1.2):
+def plot(cleanup=True, configloc='sandbox.yaml', interactive=True, threshold=1.2, plot=True):
     '''
 
     Parameters
@@ -65,8 +65,11 @@ def plot(cleanup=True, configloc='sandbox.yaml', interactive=True, threshold=1.2
     print("Using the following model parameters:")
     for k, v in zip(paramSetup['pname'], testfit[1:-4]):
         print("%s : %.4f" %(k,v))
-    visualutil.plotFit(config, testfit, threshold, tag=tag, cleanup=cleanup,
-            interactive=interactive)
+    if plot:
+        visualutil.plotFit(config, testfit, threshold,
+                           tag=tag, cleanup=cleanup,
+                           interactive=interactive)
+    return testlnprob
 
 
 def lnprior(pzero_regions, paramSetup):

@@ -290,6 +290,8 @@ def quality(bestfitloc='posteriorpdf.fits', Ngood=5000):
     Ad-hoc way to compare models of different setup, should really be likelihood ratio * Ockham factor; using Bayes Evidence
     here we just treat chi2 as -2 * lnprob; but model is non-linear.
 
+    Also compute DIC, but need manual update of avg parameter values to yaml file
+
     '''
 
     import modifypdf
@@ -323,17 +325,26 @@ def quality(bestfitloc='posteriorpdf.fits', Ngood=5000):
 
     DOF = nvis - nparams
 
-    print("median lnprob/DOF: {}".format(lnprob_med/DOF))
+    print("median lnprob/DOF: {}\n".format(lnprob_med/DOF))
 
-    # find the average values across all parameters (see visualize.posteriorPDFs)
-    # import visualutil
-    # thetaAvg_dict = visualutil.posteriorpdf(bestfitloc, Ngood=Ngood)
-    # import sandbox
-    # write out the thetaAvg to something in the format like sandbox.yaml
+
+    # find the average values across all parameters
+    thetaAvg_dict = posteriorPDF(bestfitloc)
+    print(thetaAvg_dict)
+
+    import sandbox
+    configFile_avg = 'averageParam.yaml'
+    import os
+    if not os.path.isfile(configFile_avg):
+        os.system('cp config.yaml ' + configFile_avg)
+
+    raw_input("Press enter after updating " + configFile_avg)
 
     # compute the loglike of that
-#     thetaAvg_Loglike =
-#     DIC = -4. * np.mean(fitresultsgood['lnprob']) - 2. * np.log()
+    thetaAvg_Loglike = sandbox.plot(configloc=configFile_avg, plot=False)
+
+    DIC = -4. * np.mean(fitresultsgood['lnprob']) - 2. * thetaAvg_Loglike
+    return DIC
 
 
 def posteriorPDF(bestfitloc='posteriorpdf.fits'):

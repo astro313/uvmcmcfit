@@ -121,6 +121,11 @@ def plotPDF(fitresults, tag, limits='', Ngood=5000, axes='auto'):
 
     Plot the PDF of each parameter of the model.
 
+    Returns
+    -------
+    avg_dic: dict
+        key = names of the model parameters, value = average value from the last Ngood samples
+
     """
 
     import numpy
@@ -156,6 +161,9 @@ def plotPDF(fitresults, tag, limits='', Ngood=5000, axes='auto'):
     pnames = fitresultsgood.names
     width = 1e-6
 
+    # intialize a dictionary w/ keywords = pnames to hold the average value of each paramter in the chain
+    avg_dic = dict.fromkeys(pnames)
+
     for i, pname in enumerate(pnames):
         ax = plt.subplot(nrow, ncol, i+1)     # nparams/ncol
 
@@ -164,6 +172,7 @@ def plotPDF(fitresults, tag, limits='', Ngood=5000, axes='auto'):
         if rmsval > width:
             avgval = numpy.mean(frg)
             print("{:s} = {:.4f} +/- {:.4f}").format(pname, avgval, rmsval)
+            avg_dic[pname] = avgval
             totalwidth = frg.max() - frg.min()
             nbins = totalwidth / rmsval * 5
 
@@ -199,6 +208,7 @@ def plotPDF(fitresults, tag, limits='', Ngood=5000, axes='auto'):
 
     savefile = tag + 'PDFs.png'
     savefig(savefile)
+    return avg_dic
 
 
 def makeSBmap(config, fitresult):

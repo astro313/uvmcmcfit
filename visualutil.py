@@ -54,8 +54,6 @@ def reconstruct_chain(bestfitloc='posteriorpdf.fits', outfile='chain_reconstruct
         pickle.dump(chains, f, -1)
     print("Saved reconstructed unflattened chains to {}.".format(outfile))
 
-    return chains
-
 
 def test_reconstruct_chain(bestfitloc='posteriorpdf.fits', chainFile='chain.pkl'):
 

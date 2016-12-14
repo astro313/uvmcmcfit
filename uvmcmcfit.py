@@ -1,12 +1,20 @@
 #!/usr/bin/env python
 """
- Author: Shane Bussmann & T. K. Daisy Leung
+ Author: T. K. Daisy Leung
 
- Last modified: 2016 Oct 13
+
+Similar to uvmcmcfit.py, but here we edited it to
+    - throw out a pre-defined number of burn-in samples;
+    - save acceptance_fraction + misc stuff as a separate file
+    - only save samples every some number of samples (instead of every iteration)
+    - email ourselves once a certain number of samples have been obtained, and so we can decide whether or not to stop sampling instead of interupting the code
+
+
+ Last modified: 2016 Dec 13
 
  Note: This is experimental software that is in a very active stage of
  development.  If you are interested in using this for your research, please
- contact me first at sbussmann@astro.cornell.edu!  Thanks.
+ contact me first at tleung@astro.cornell.edu!  Thanks.
 
  Purpose: Fit a parametric model to interferometric data using Dan
  Foreman-Mackey's emcee routine.  Gravitationally lensed sources are accounted
@@ -25,7 +33,7 @@
 --------------------------
  USAGE
 
- python $PYSRC/uvmcmcfit.py
+ python $PYSRC/uvmcmcfit2.py
 
 --------------------------
  SETUP PROCEDURES
@@ -63,8 +71,12 @@
 --------
  OUTPUTS
 
- "posteriorpdf.fits": model parameters for every MCMC iteration, in fits
+ "posteriorpdf2.fits": model parameters for every MCMC iteration, in fits
  format.
+
+ "chains.pkl": contains unflatten chains for diagnostic purposes
+
+ "summary.txt": contains mean acceptance fraction
 
 """
 
@@ -149,7 +161,7 @@ def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
     #    poff_regions[fixed[ifix]] = pzero_regions[fixindx[fixed[ifix]]]
     for ifix in range(nfixed):
         ifixed = fixed[ifix]
-        subindx = fixindx[ifixed]
+        subindx = int(fixindx[ifixed])
         par0 = 0
         if fixindx[subindx] > 0:
             par0 = pzero_regions[fixindx[subindx]]
@@ -484,7 +496,7 @@ pname = paramSetup['pname']
 nsource_regions = paramSetup['nsource_regions']
 
 # Use an intermediate posterior PDF to initialize the walkers if it exists
-posteriorloc = 'posteriorpdf.fits'
+posteriorloc = 'posteriorpdf2.fits'
 if os.path.exists(posteriorloc):
 
     # read the latest posterior PDFs
@@ -561,30 +573,187 @@ else:
 #os.system('date')
 currenttime = time.time()
 
-# pos - A list of the current positions of the walkers in the parameter space. The shape of this object will be (nwalkers, dim)
+# do burn-in if posteriorpdf2.fits doesn't exist or contains any samples
+# But, it's difficult to judge how many steps is needed
+# need to may sure later that we are sampling longer than the AC time
+if not realpdf:
+    burnin = 150
+    print("*** Running Burn in phase of steps {:d} ***".format(burnin))
+    try:
+        pos0, lnprob0, rstate0 = sampler.run_mcmc(pzero, burnin)
+    except ValueError:
+        pos0, lnprob0, rstate0, _ = sampler.run_mcmc(pzero, burnin)
+    sampler.reset()            # reset chain
+else:
+    pos0 = pzero
+
+
+class AlarmException(Exception):
+    pass
+
+
+def alarmHandler(signum, frame):
+    raise AlarmException
+
+
+def nonBlockingRawInput(prompt='', timeout=20, response='yes'):
+    '''
+
+    '''
+    import signal
+    signal.signal(signal.SIGALRM, alarmHandler)
+    signal.alarm(timeout)
+    try:
+        text = raw_input(prompt)
+        signal.alarm(0)
+        return text
+    except AlarmException:
+        print('\nPrompt timeout. Continuing...')
+    signal.signal(signal.SIGALRM, signal.SIG_IGN)
+    return response
+
+
+def query_yes_no(question, default=None):
+    """Ask a yes/no question via raw_input() and return their answer.
+
+    "question" is a string that is presented to the user.
+    "default" is the presumed answer if the user just hits <Enter>.
+        It must be "yes" (the default), "no" or None (meaning
+        an answer is required of the user).
+
+    The "answer" return value is True for "yes" or False for "no".
+    """
+
+    import sys
+    valid = {"yes": True, "y": True, "ye": True,
+             "no": False, "n": False}
+    if default is None:
+        prompt = " [y/n] "
+    elif default == "yes":
+        prompt = " [Y/n] "
+    elif default == "no":
+        prompt = " [y/N] "
+    else:
+        raise ValueError("invalid default answer: '%s'" % default)
+
+    while True:
+        sys.stdout.write(question + prompt)
+        choice = raw_input().lower()
+        if default is not None and choice == '':
+            return valid[default]
+        elif choice in valid:
+            return valid[choice]
+        else:
+            sys.stdout.write("Please respond with 'yes' or 'no' "
+                             "(or 'y' or 'n').\n")
+#        sys.stdout.flush()
+
+
+def email_self(msg, receiver='tleung@astro.cornell.edu'):
+
+    '''
+    Parameters
+    ----------
+    msg: str
+        in email
+
+    '''
+
+    import os
+
+    #email
+    SENDMAIL = "/usr/sbin/sendmail"
+    p = os.popen("%s -t" % SENDMAIL, "w")
+    p.write("To: "+receiver+"\n")
+    p.write("Subject: uvmcmcfit needs a respond to continuue. \n")
+    p.write("\n")    # blank line separating headers from body
+
+    message = msg + "\n\n" + ' Continue?'
+
+    p.write(message)
+    sts = p.close()
+    if sts != 0:
+        print("Sendmail exit status {}".format(sts))
+
+
+import cPickle as pickle
+import os
+# pos - A list of current positions of walkers in the parameter space; dim = (nwalkers, dim)
 # prob - The list of log posterior probabilities for the walkers at positions given by pos . The shape of this object is (nwalkers, dim).
-# state the random number generator state
-# amp the metadata 'blobs' associated with the current positoni
-for pos, prob, state, amp in sampler.sample(pzero, iterations=10000):
+# state - the random number generator state
+# amp - metadata 'blobs' associated with the current positon
 
-    print("Mean acceptance fraction: {:f}".
-            format(numpy.mean(sampler.acceptance_fraction)),
-            "\nMean lnprob and Max lnprob values: {:f} {:f}".
-            format(numpy.mean(prob), numpy.max(prob)),
-            "\nTime to run previous set of walkers (seconds): {:f}".
-            format(time.time() - currenttime))
-    currenttime = time.time()
-    #ff.write(str(prob))
-    superpos = numpy.zeros(1 + nparams + nmu)
+# below for testing..
+# nsamples = 1000
+# nsessions = 2
 
-    for wi in range(nwalkers):
-        superpos[0] = prob[wi]
-        superpos[1:nparams + 1] = pos[wi]
-        superpos[nparams + 1:nparams + nmu + 1] = amp[wi]
-        posteriordat.add_row(superpos)
-    print("Writing, don't exit...")
-    posteriordat.write('posteriorpdf.fits', overwrite=True)
-    print("Done saviing...")
-    #posteriordat.write('posteriorpdf.txt', format='ascii')
+# in general, we want many samples.
+# niter & nsesions dep. on nwalkers
+#
+nsamples = 1e6
+niter = int(round(nsamples/nwalkers))
+nsessions = 10
+saveint = niter/nsessions/3
+
+valid = {"yes": True, "y": True, "ye": True,
+         "no": False, "n": False}
+
+for i in range(nsessions):
+    saveidx = 0
+    for pos, prob, state, amp in sampler.sample(pos0, iterations=int(niter/nsessions)):
+    # using sampler.sample() will have pre-defined 0s in elements (cf. run_mcmc())
+        walkers, steps, dim = sampler.chain.shape
+        result = [
+            "Mean Acceptance fraction across all walkers of this iteration: {:.2f}".format(numpy.mean(sampler.acceptance_fraction)),
+            "Mean lnprob and Max lnprob values: {:f} {:f}".format(numpy.mean(prob), numpy.max(prob)),
+            "Time to run previous set of walkers (seconds): {:f}".format(time.time() - currenttime)
+                ]
+        print('\n'.join(result))
+        f = open('summary.txt', 'a')
+        f.write('\n'.join(result))
+        f.write('\n')
+        f.close()
+
+        currenttime = time.time()
+        #ff.write(str(prob))
+
+        superpos = numpy.zeros(1 + nparams + nmu)
+        for wi in range(nwalkers):
+            superpos[0] = prob[wi]
+            superpos[1:nparams + 1] = pos[wi]
+            superpos[nparams + 1:nparams + nmu + 1] = amp[wi]
+            posteriordat.add_row(superpos)
+
+        # only save if it has went through every saveint iterations or is the last sample
+        if not sampler.chain[:, numpy.any(sampler.chain[0, :, :] != 0, axis=1), :].shape[1] % saveint or (sampler.chain[:, numpy.any(sampler.chain[0, :, :] != 0, axis=1), :].shape[1] == int(niter/nsessions)):
+            print("Ran {:d} iterations in this session. Saving data".format(sampler.chain[:, numpy.any(sampler.chain[0, :, :] != 0, axis=1), :].shape[1]))
+            posteriordat.write('posteriorpdf2.fits', overwrite=True)
+            #posteriordat.write('posteriorpdf.txt', format='ascii')
+
+            saveidx = sampler.chain[:, numpy.any(sampler.chain[0, :, :] != 0, axis=1), :].shape[1]
+
+    message = "We have finished {:d} iterations with {:d} walkers. ".format(sampler.chain[:, numpy.any(sampler.chain[0, :, :] != 0, axis=1), :].shape[1], nwalkers)
+
+    if i < nsessions-1:
+        email_self(message)
+        print(message)
+        ret = nonBlockingRawInput("Shall we continuue with next session? (Y/N)", timeout=600).lower()
+
+        while not ret in valid:
+            print("Please respond with 'yes' or 'no' (or 'y' or 'n').\n")
+            ret = nonBlockingRawInput("Shall we continuue with next session? (Y/N)", timeout=600).lower()
+        if not valid[ret]:
+            import sys
+            sys.exit("Quiting... ")
+            if mpi: pool.close()
+
+    sampler.reset()
+    pos0 = pos
+
+f = open('summary.txt', 'a')
+f.write("Finish all {:d} sessions \n".format(nsessions))
+f.write("Total number of samples: {:d} \n".format(niter/nsessions * nsessions * nwalkers))
+f.write('\n')
+f.close()
 
 if mpi: pool.close()

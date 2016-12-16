@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
- Author: T. K. Daisy Leung
+ Author: Shane Bussmann, T. K. Daisy Leung
 
 
 Similar to uvmcmcfit.py, but here we edited it to
@@ -10,7 +10,7 @@ Similar to uvmcmcfit.py, but here we edited it to
     - email ourselves once a certain number of samples have been obtained, and so we can decide whether or not to stop sampling instead of interupting the code
 
 
- Last modified: 2016 Dec 13
+ Last modified: 2016 Dec 15
 
  Note: This is experimental software that is in a very active stage of
  development.  If you are interested in using this for your research, please
@@ -123,24 +123,33 @@ def lnprior(pzero_regions, paramSetup):
         pzero_uniform = pzero_regions[uniform_regions]
         priorln = 0
         mu = 1
-        if (pzero_uniform < p_l_regions).any():
-            priorln = -numpy.inf
-        if (pzero_uniform > p_u_regions).any():
+        if (pzero_uniform > p_l_regions).all() and (pzero_uniform < p_u_regions).all():
+            priorln = numpy.log(1.0/numpy.abs(p_l_regions - p_u_regions))
+        else:
             priorln = -numpy.inf
 
     # Gaussian priors
     gaussian_regions = paramSetup['PriorShape'] == 'Gaussian'
     if gaussian_regions.any():
-    #ngaussian = paramSetup['prior_shape'][gaussian_regions].size
-    #for ipar in range(ngaussian):
+        import scipy.stats as stats
+        # initlized as [mean, blah, blah, sigma]
         mean_regions = paramSetup['p_l'][gaussian_regions]
         rms_regions = paramSetup['p_u'][gaussian_regions]
-        #part1 = numpy.log(2 * numpy.pi * rms_regions ** 2)
-        parameter = pzero_regions[gaussian_regions]
-        #print(parameter - mean_regions, (parameter - mean_regions)/rms_regions)
-        part2 = (parameter - mean_regions) ** 2 / rms_regions ** 2
-        priorln = -2.5 * (part2).sum()
-        #priorln += priorln_param
+        pzero_gauss = pzero_regions[gaussian_regions]
+        priorln = numpy.log(stats.norm(scale=rms_regions, loc=mean_regions).pdf(pzero_gauss))
+
+    # Gaussian pos (for parameter that must be positive e.g. flux density)
+    gaussPos_regions = paramSetup['PriorShape'] == 'GaussianPos'
+    if gaussPos_regions.any():
+        pzero_gaussPos = pzero_regions[gaussPos_regions]
+        if pzero_gaussPos < 0.0:
+            priorln = -numpy.inf
+        else:
+            import scipy.stats as stats
+            # initlized as [mean, blah, blah, sigma]
+            mean_regions = paramSetup['p_l'][gaussPos_regions]
+            rms_regions = paramSetup['p_u'][gaussPos_regions]
+            priorln = numpy.log(stats.norm(scale=rms_regions, loc=mean_regions).pdf(pzero_gauss))
 
     return priorln, mu
 

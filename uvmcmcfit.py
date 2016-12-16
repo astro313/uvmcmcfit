@@ -71,10 +71,8 @@ Similar to uvmcmcfit.py, but here we edited it to
 --------
  OUTPUTS
 
- "posteriorpdf2.fits": model parameters for every MCMC iteration, in fits
+ "posteriorpdf.fits": model parameters for every MCMC iteration, in fits
  format.
-
- "chains.pkl": contains unflatten chains for diagnostic purposes
 
  "summary.txt": contains mean acceptance fraction
 
@@ -496,7 +494,7 @@ pname = paramSetup['pname']
 nsource_regions = paramSetup['nsource_regions']
 
 # Use an intermediate posterior PDF to initialize the walkers if it exists
-posteriorloc = 'posteriorpdf2.fits'
+posteriorloc = 'posteriorpdf.fits'
 if os.path.exists(posteriorloc):
 
     # read the latest posterior PDFs
@@ -573,7 +571,7 @@ else:
 #os.system('date')
 currenttime = time.time()
 
-# do burn-in if posteriorpdf2.fits doesn't exist or contains any samples
+# do burn-in if posteriorpdf.fits doesn't exist or contains any samples
 # But, it's difficult to judge how many steps is needed
 # need to may sure later that we are sampling longer than the AC time
 if not realpdf:
@@ -727,7 +725,7 @@ for i in range(nsessions):
         # only save if it has went through every saveint iterations or is the last sample
         if not sampler.chain[:, numpy.any(sampler.chain[0, :, :] != 0, axis=1), :].shape[1] % saveint or (sampler.chain[:, numpy.any(sampler.chain[0, :, :] != 0, axis=1), :].shape[1] == int(niter/nsessions)):
             print("Ran {:d} iterations in this session. Saving data".format(sampler.chain[:, numpy.any(sampler.chain[0, :, :] != 0, axis=1), :].shape[1]))
-            posteriordat.write('posteriorpdf2.fits', overwrite=True)
+            posteriordat.write('posteriorpdf.fits', overwrite=True)
             #posteriordat.write('posteriorpdf.txt', format='ascii')
 
             saveidx = sampler.chain[:, numpy.any(sampler.chain[0, :, :] != 0, axis=1), :].shape[1]

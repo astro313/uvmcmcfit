@@ -38,6 +38,8 @@ def pcdload(visfile, uvfits=False):
         from taskinit import tb
         tb.open(visfile + '/SOURCE')
         pcd_ra = tb.getcol('DIRECTION')[0][0] * 180 / numpy.pi
+        if pcd_ra < 0:
+            pcd_ra += 360
         pcd_dec = tb.getcol('DIRECTION')[1][0] * 180 / numpy.pi
         pcd = [pcd_ra, pcd_dec]
         return pcd
@@ -112,7 +114,7 @@ def uvload(visfile, uvfits=False):
                     uu[:, 0, ipol] = freqif * visibilities['UU']
                     vv[:, 0, ipol] = freqif * visibilities['VV']
                     #www = freqif * visibilities['WW']
-    
+
     else:
         from taskinit import tb
         # read in the uvfits data
@@ -191,7 +193,7 @@ def visload(visfile, uvfits=False):
 def getStatWgt(real_raw, imag_raw, wgt_raw):
 
     """
-    Compute the weights as the rms scatter in the real and imaginary 
+    Compute the weights as the rms scatter in the real and imaginary
     visibilities.
     """
 

@@ -124,6 +124,7 @@ def lnprior(pzero_regions, paramSetup):
         priorln = 0
         mu = 1
         if (pzero_uniform > p_l_regions).all() and (pzero_uniform < p_u_regions).all():
+            # log prior
             priorln = numpy.log(1.0/numpy.abs(p_l_regions - p_u_regions))
         else:
             priorln = -numpy.inf
@@ -151,7 +152,7 @@ def lnprior(pzero_regions, paramSetup):
             rms_regions = paramSetup['p_u'][gaussPos_regions]
             priorln = numpy.log(stats.norm(scale=rms_regions, loc=mean_regions).pdf(pzero_gauss))
 
-    return priorln, mu
+    return priorln.sum(), mu
 
 
 def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,

@@ -493,7 +493,7 @@ def statwt(visfileloc, newvisfileloc, ExcludeChannels=False):
                 wgt_temp[oktoreplace] = wgt_scaled[oktoreplace]
                 wgt[:, ispw, :, ipol] = wgt_temp
 
-        visfile[0].data['DATA'][:, 0, 0, :, :, 2] = wgt
+        visfile[0].data['DATA'][:, 0, 0, :, :, :, 2] = wgt
 
     else:
         for ipol in range(npol):
@@ -506,13 +506,15 @@ def statwt(visfileloc, newvisfileloc, ExcludeChannels=False):
             wgt_scaled = getStatWgt(real_raw, imag_raw, wgt_raw)
             wgt[:, :, ipol] = wgt_scaled
 
-        try:
-            visfile[0].data['DATA'][:, 0, 0, :, :, :, 2] = wgt
-        except ValueError:
-            # wgt.ndim is 3 if data_real.dim is 3
-            if data_real.ndim == 3:
-                # wgt.shape is defined using nvis, nfreq, npol
-                visfile[0].data['DATA'][:, 0, 0, 0, :, :, 2] = wgt
+        visfile[0].data['DATA'][:, 0, 0, :, :, 2] = wgt
+
+        # try:
+        #     visfile[0].data['DATA'][:, 0, 0, :, :, :, 2] = wgt
+        # except ValueError:
+        #     # wgt.ndim is 3 if data_real.dim is 3
+        #     if data_real.ndim == 3:
+        #         # wgt.shape is defined using nvis, nfreq, npol
+        #         visfile[0].data['DATA'][:, 0, 0, 0, :, :, 2] = wgt
 
     visfile.writeto(newvisfileloc)
 

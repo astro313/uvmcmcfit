@@ -95,7 +95,8 @@ def lnprior(pzero_regions, paramSetup):
         pzero_uniform = pzero_regions[uniform_regions]
         if (pzero_uniform > p_l_regions).all() and (pzero_uniform < p_u_regions).all():
             # log prior
-            priorln += numpy.log(1.0/numpy.abs(p_l_regions - p_u_regions)).sum()
+            # priorln += numpy.log(1.0/numpy.abs(p_l_regions - p_u_regions)).sum()
+            priorln = 0.0
         else:
             priorln = -numpy.inf
             return priorln, mu

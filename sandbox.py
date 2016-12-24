@@ -79,10 +79,13 @@ def lnprior(pzero_regions, paramSetup):
     Function that computes the ln prior probabilities of the model parameters.
 
     """
+    priorln = 0.0
+    mu = 1
 
     # ensure all parameters are finite
     if (pzero_regions * 0 != 0).any():
         priorln = -numpy.inf
+        return priorln, mu
 
     # Uniform priors
     uniform_regions = paramSetup['PriorShape'] == 'Uniform'
@@ -90,27 +93,39 @@ def lnprior(pzero_regions, paramSetup):
         p_l_regions = paramSetup['p_l'][uniform_regions]
         p_u_regions = paramSetup['p_u'][uniform_regions]
         pzero_uniform = pzero_regions[uniform_regions]
-        priorln = 0
-        mu = 1
-        if (pzero_uniform < p_l_regions).any():
+        if (pzero_uniform > p_l_regions).all() and (pzero_uniform < p_u_regions).all():
+            # log prior
+            priorln += numpy.log(1.0/numpy.abs(p_l_regions - p_u_regions)).sum()
+        else:
             priorln = -numpy.inf
-        if (pzero_uniform > p_u_regions).any():
-            priorln = -numpy.inf
+            return priorln, mu
 
     # Gaussian priors
     gaussian_regions = paramSetup['PriorShape'] == 'Gaussian'
     if gaussian_regions.any():
-    #ngaussian = paramSetup['prior_shape'][gaussian_regions].size
-    #for ipar in range(ngaussian):
+        import scipy.stats as stats
+        # initlized as [mean, blah, blah, sigma]
         mean_regions = paramSetup['p_l'][gaussian_regions]
         rms_regions = paramSetup['p_u'][gaussian_regions]
-        #part1 = numpy.log(2 * numpy.pi * rms_regions ** 2)
-        parameter = pzero_regions[gaussian_regions]
-        #print(parameter - mean_regions, (parameter - mean_regions)/rms_regions)
-        part2 = (parameter - mean_regions) ** 2 / rms_regions ** 2
-        priorln = -2.5 * (part2).sum()
-        #priorln += priorln_param
+        pzero_gauss = pzero_regions[gaussian_regions]
+        priorln += numpy.log(stats.norm(scale=rms_regions, loc=mean_regions).pdf(pzero_gauss)).sum()
 
+    # Gaussian pos (for parameter that must be positive e.g. flux density)
+    gaussPos_regions = paramSetup['PriorShape'] == 'GaussianPos'
+    if gaussPos_regions.any():
+        pzero_gaussPos = pzero_regions[gaussPos_regions]
+        if pzero_gaussPos < 0.0:
+            priorln = -numpy.inf
+            return priorln, mu
+        else:
+            import scipy.stats as stats
+            # initlized as [mean, blah, blah, sigma]
+            mean_regions = paramSetup['p_l'][gaussPos_regions]
+            rms_regions = paramSetup['p_u'][gaussPos_regions]
+            priorln += numpy.log(stats.norm(scale=rms_regions, loc=mean_regions).pdf(pzero_gauss)).sum()
+
+#     if not isinstance(priorln, float):
+#         priorln = priorln.sum()
     return priorln, mu
 
 
@@ -128,7 +143,7 @@ def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
     #    poff_regions[fixed[ifix]] = pzero_regions[fixindx[fixed[ifix]]]
     for ifix in range(nfixed):
         ifixed = fixed[ifix]
-        subindx = fixindx[ifixed]
+        subindx = int(fixindx[ifixed])
         par0 = 0
         if fixindx[subindx] > 0:
             par0 = pzero_regions[fixindx[subindx]]
@@ -204,12 +219,6 @@ def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
                 amp.extend([1.0])
 
     if miriad:
-        configloc='sandbox.yaml'
-        configfile = open(configloc, 'r')
-        config = yaml.load(configfile)
-        visfile = config['UVData']
-        index = visfile.index('uvfits')
-        visfilemiriad = visfile[0:index] + 'miriad'
         # save the fits image of the lensed source
         ptag = str(os.getpid())
         SBmapLoc = 'LensedSBmap' + ptag + '.fits'
@@ -249,10 +258,9 @@ def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
     else:
         model_complex = sample_vis.uvmodel(g_lensimage_all, headmod,
                 uuu, vvv, pcd)
-        vis_complex -= model_complex
-        diff_all = wgt * numpy.abs(vis_complex) ** 2
-        chi2_all = diff_all#wgt * diff_all * diff_all
-        #import pdb; pdb.set_trace()
+#        print(vis_complex.shape, model_complex.shape)     # remove
+        diff_all = numpy.abs(vis_complex - model_complex)
+        chi2_all = wgt * diff_all * diff_all
     #model_real += numpy.real(model_complex)
     #model_imag += numpy.imag(model_complex)
 
@@ -284,8 +292,10 @@ def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
     if lnlikemethod == 'chi2':
         lnlike = chi2_all
     else:
-        sigmaterm_all = 2 * numpy.log(2 * numpy.pi / wgt)
-        lnlike = chi2_all + sigmaterm_all
+        # by definition, loglike = -n/2*ln(2pi sigma^2) - 1/(2sigma^2) sum of (data-model)^2 over i=1 to n; but the constant term doesn't matter
+        sigmaterm_all = len(wgt) * numpy.log(2 * numpy.pi / wgt)
+        lnlike = chi2_all   # + sigmaterm_all
+        # * -1/2 factor in latter step
 
     # compute number of degrees of freedom
     #nmeasure = lnlike.size
@@ -302,6 +312,7 @@ def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
         likeln = -numpy.inf
 
     return likeln, amp
+
 
 def lnprob(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
            fixindx, paramSetup, computeamp=True):
@@ -324,6 +335,5 @@ def lnprob(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
 
     normalization = 1.0#2 * real.size
     probln = lp * normalization + ll
-    #print(probln, lp*normalization, ll)
 
     return probln, mu

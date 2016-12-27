@@ -508,13 +508,17 @@ def statwt(visfileloc, newvisfileloc, ExcludeChannels=False):
 
         # visfile[0].data['DATA'][:, 0, 0, :, :, 2] = wgt
 
-        try:
-            visfile[0].data['DATA'][:, 0, 0, :, :, :, 2] = wgt
-        except ValueError:
-            # wgt.ndim is 3 if data_real.dim is 3
-            if data_real.ndim == 3:
+        import pdb; pdb.set_trace()
+        if nfreq > 1:
+            try:
+                visfile[0].data['DATA'][:, 0, 0, :, :, :, 2] = wgt
+            except ValueError:
+                # wgt.ndim is 3 if data_real.dim is 3
+                if data_real.ndim == 3:
                 # wgt.shape is defined using nvis, nfreq, npol
-                visfile[0].data['DATA'][:, 0, 0, 0, :, :, 2] = wgt
+                    visfile[0].data['DATA'][:, 0, 0, 0, :, :, 2] = wgt
+        elif nfreq == 1:
+                visfile[0].data['DATA'][:, 0, 0, :, 0, :, 2] = wgt
 
     visfile.writeto(newvisfileloc)
 

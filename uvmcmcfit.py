@@ -496,6 +496,7 @@ except:
 
 # remove the data points with zero or negative weight
 positive_definite = wgt > 0
+assert len(positive_definite[positive_definite]) > 0, " --- Find no data to fit, check the weights --- "
 vis_complex = vis_complex[positive_definite]
 wgt = wgt[positive_definite]
 uuu = uuu[positive_definite]

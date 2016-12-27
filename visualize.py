@@ -285,7 +285,7 @@ def walker_reconstructed(bestfitloc='posteriorpdf.fits', chainFile='chain_recons
     return None
 
 
-def quality(bestfitloc='posteriorpdf.fits', Ngood=5000):
+def quality(bestfitloc='posteriorpdf.fits', Ngood=5000, plot=True):
     '''
     Ad-hoc way to compare models of different setup, should really be likelihood ratio * Ockham factor; using Bayes Evidence
     here we just treat chi2 as -2 * lnprob; but model is non-linear.
@@ -311,10 +311,10 @@ def quality(bestfitloc='posteriorpdf.fits', Ngood=5000):
     import uvutil
     visfileloc = config['UVData']
     data_complex, data_wgt = uvutil.visload(visfileloc)
-    npos = len(data_complex)*3
+    npos = data_complex.size
     print("total number of vis: {}".format(npos))
 
-    npos_rmflagged = len(data_complex[data_wgt > 0])*3
+    npos_rmflagged = data_complex[data_wgt > 0].size
     print("number of vis after removing data with negative or zero weights: {}".format(npos_rmflagged))
 
     nvis = np.min([npos, npos_rmflagged])
@@ -330,7 +330,12 @@ def quality(bestfitloc='posteriorpdf.fits', Ngood=5000):
 
     # find the average values across all parameters
     thetaAvg_dict = posteriorPDF(bestfitloc)
-    print(thetaAvg_dict)
+
+    for k, v in thetaAvg_dict.iteritems():
+        if isinstance(v, float):
+            print("{:s}: {:.2f}".format(k, v))
+        else:
+            print(k, v)
 
     import sandbox
     configFile_avg = 'averageParam.yaml'
@@ -341,7 +346,7 @@ def quality(bestfitloc='posteriorpdf.fits', Ngood=5000):
     raw_input("Press enter after updating " + configFile_avg)
 
     # compute the loglike of that
-    thetaAvg_Loglike = sandbox.plot(configloc=configFile_avg, plot=False)
+    thetaAvg_Loglike = sandbox.plot(configloc=configFile_avg, plot=plot, tag=configFile_avg[:configFile_avg.find('.yaml')])
 
     DIC = -4. * np.mean(fitresultsgood['lnprob']) - 2. * thetaAvg_Loglike
     return DIC

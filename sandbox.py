@@ -19,7 +19,7 @@ import sample_vis
 import uvutil
 
 
-def plot(cleanup=True, configloc='sandbox.yaml', interactive=True, threshold=1.2, plot=True):
+def plot(cleanup=True, configloc='sandbox.yaml', interactive=True, threshold=1.2, plot=True, tag='sandbox'):
     '''
 
     Parameters
@@ -59,7 +59,6 @@ def plot(cleanup=True, configloc='sandbox.yaml', interactive=True, threshold=1.2
 
     for i in range(nmu):
         testfit = numpy.append(testfit, 0)
-    tag = 'sandbox'
 
     print("lnprob: %f" %testlnprob)
     print("Using the following model parameters:")

@@ -167,6 +167,7 @@ def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
     """ Function that computes the Ln likelihood of the data"""
 
     # search poff_models for parameters fixed relative to other parameters
+    fixindx = numpy.array(fixindx)
     fixed = (numpy.where(fixindx >= 0))[0]
     nfixed = fixindx[fixed].size
     p_u_regions = paramSetup['p_u']
@@ -175,7 +176,7 @@ def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
     #for ifix in range(nfixed):
     #    poff_regions[fixed[ifix]] = pzero_regions[fixindx[fixed[ifix]]]
     for ifix in range(nfixed):
-        ifixed = fixed[ifix]
+        ifixed = int(fixed[ifix])
         subindx = int(fixindx[ifixed])
         par0 = 0
         if fixindx[subindx] > 0:
@@ -291,7 +292,6 @@ def lnlike(pzero_regions, vis_complex, wgt, uuu, vvv, pcd,
     else:
         model_complex = sample_vis.uvmodel(g_lensimage_all, headmod,
                 uuu, vvv, pcd)
-#        print(vis_complex.shape, model_complex.shape)     # remove
         diff_all = numpy.abs(vis_complex - model_complex)
         chi2_all = wgt * diff_all * diff_all
     #model_real += numpy.real(model_complex)
@@ -577,6 +577,7 @@ if not realpdf:
 
 # determine the indices for fixed parameters
 fixindx = setuputil.fixParams(paramSetup)
+fixindx = map(int, fixindx)
 
 # Initialize the sampler with the chosen specs.
 if mpi:

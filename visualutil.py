@@ -136,7 +136,7 @@ def plotPDF(fitresults, tag, limits='', Ngood=5000, axes='auto'):
 
 
     # plotting parameters
-    rc('font',**{'family':'sans-serif', 'sans-serif':['Arial Narrow'],
+    rc('font',**{'family':'sans-serif',
         'size':'12'})
 
     # grab the last Ngood fits
@@ -743,7 +743,7 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
     import re
 
     # set font properties
-    font = {'family' : 'Arial Narrow',
+    font = {'family' : 'sans-serif',
             'weight' : 'bold',
             'size'   : 13}
     matplotlib.rc('font', **font)

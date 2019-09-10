@@ -263,7 +263,7 @@ def makeSBmap(config, fitresult):
         parameters_offset = numpy.zeros(ndim_total)
         for ifix in range(nfixed):
             ifixed = fixed[ifix]
-            subindx = fixindx[ifixed]
+            subindx = int(fixindx[ifixed])
             par0 = 0
             if fixindx[subindx] > 0:
                 par0 = fitresult[fixindx[subindx] + 1]
@@ -972,10 +972,10 @@ def plotImage(model, data, config, modeltype, fitresult, tag=''):
     plt.imshow(modelcut, cmap='gray_r', interpolation='nearest', \
             extent=cornerextent, origin='lower', vmax=vmax, vmin=vmin)
 
-#     plevs = 3*rms * 2**(numpy.arange(10))
-#     nlevs = sorted(-3 * rms * 2**(numpy.arange(4)))
-    plevs = 2*rms * numpy.sqrt(2)**(numpy.arange(10))
-    nlevs = sorted(-2 * rms * numpy.sqrt(2)**(numpy.arange(4)))
+    plevs = 3*rms * 2**(numpy.arange(15))
+    nlevs = sorted(-3 * rms * 2**(numpy.arange(4)))
+#     plevs = 2*rms * numpy.sqrt(2)**(numpy.arange(10))
+#     nlevs = sorted(-2 * rms * numpy.sqrt(2)**(numpy.arange(4)))
     pcline = 'solid'
     ncline = 'dashed'
     #nx_contour = datacut[0, :].size

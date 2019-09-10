@@ -76,8 +76,29 @@ def MSpcd(msFile):
     new = tb.getcol('PHASE_DIR')
 
     def shiftRA(ra):
-        if ra < 0.: ra += numpy.pi * 2
+        try:
+            if len(ra) > 1:
+                ra = [ra_i + numpy.pi * 2 for ra_i in numpy.squeeze(ra) if ra_i < 0.]
+            else:
+                if ra < 0.:
+                    ra += numpy.pi * 2.
+#                print(ra)
+        except:
+            if ra < 0.:
+                ra += numpy.pi * 2.
+#            print(ra)
         return ra
+
+    # if old.shape[-1] > 1:
+    #     raise("Should check if the MS file truly only contains the science target!")
+
+    if old.shape[-1] > 1:
+        # for this Cloverleaf set, cloverleaf is the last source
+        old_ra, old_dec = numpy.squeeze(old)[0][-1], numpy.squeeze(old)[-1][-1]
+        old = numpy.array([[old_ra], [old_dec]])
+        new_ra, new_dec = numpy.squeeze(new)[0][-1], numpy.squeeze(new)[-1][-1]
+        new = numpy.array([[new_ra], [new_dec]])
+
     old[0] = shiftRA(old[0])
     new[0] = shiftRA(new[0])
 
@@ -86,8 +107,12 @@ def MSpcd(msFile):
 
     # new phase center
     pcd_ra, pcd_dec = new[0] * 180. / numpy.pi, new[1] * 180. / numpy.pi
+    # print(pcd_ra, pcd_dec)
     tb.close()
-    pcd = pcd_ra[0][0], pcd_dec[0][0]
+    try:
+        pcd = pcd_ra[0][0], pcd_dec[0][0]
+    except IndexError:
+        pcd = pcd_ra[0], pcd_dec[0]
     return list(pcd)
 
 
